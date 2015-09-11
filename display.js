@@ -1,5 +1,6 @@
 var renderer, cube, sphere, scene, camere;
-var timeStep = 100;
+var timeStep = 1000;
+
 function makeScene(){
 	var width = 700;
 	var height = 700;
@@ -25,7 +26,7 @@ function makeScene(){
 
 	var geometry = new THREE.SphereGeometry( 50, 32, 32 );
 	var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-	sphere = new THREE.Mesh( geometry, material );
+	var sphere = new THREE.Mesh( geometry, material );
 	scene.add( sphere );
 
 
@@ -52,42 +53,30 @@ function makeScene(){
 
 
 
-
 function mainLoop(){
 	makeScene();
 	var clock = new THREE.Clock;
-	var d = new Date();
-
 	var preFrameTime = d.getTime();
-	console.log(preFrameTime);
 	var fragmentsOfTime = 0;
-	var priorState = new State(GRAVITY);
 	function render() {
-		var n = new Date();
-	    var frameTime = n.getTime();
-	    
-	    //determine how many steps to take
+	    var frameTime = d.getTime();
 	    var timePassed = frameTime - preFrameTime;
-	    var timeToConsider = timePassed + fragmentsOfTime;
-	    var stepsGoneThrough = Math.floor(timeToConsider / timeStep);
-	    fragmentsOfTime = timeToConsider % timeStep;
-
-
-	    preFrameTime = frameTime;
+	    //how many time steps to emulate
+	    var stepsGoneThrough = (timePassed + fragmentsOfTime) % timeStep;
+	    fragmentsOfTime = timePassed - (stepsGoneThrough * timeStep);
 	    renderer.render(scene, camera);
+	    console.log('frame');
 	    if(stepsGoneThrough > 0){
-	    	console.log(('steps: ' + stepsGoneThrough.toString()));
+	    	console.log(('steps: ' + stepsGoneThrough.toString())
 
 	    }
 
-	    for (var i = 0; i < stepsGoneThrough; i ++){
-	    	priorState = eulerStep(priorState, sphere);
-	    }
 
 
 	 
 	    requestAnimationFrame(render);
 	}
+	 
 	render();
 }
 
