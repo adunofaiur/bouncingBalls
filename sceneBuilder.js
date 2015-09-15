@@ -1,5 +1,5 @@
 var renderer, cube, sphere, scene, camere;
-var timeStep = 100;
+var timeStep = 10;
 function makeScene(){
 	var width = 700;
 	var height = 700;
@@ -10,10 +10,20 @@ function makeScene(){
 	 
 	scene = new THREE.Scene;
 
-	var cubeGeometry = new THREE.CubeGeometry(500, 500, 500);
-	var cubeMaterial = new THREE.MeshBasicMaterial({ transparent: true ,color: 0x1ec876, opacity: 0 });
+	var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
+	var cubeMaterials =[ new THREE.MeshBasicMaterial({ transparent: true ,color: 0x99CCFF, opacity: .5 }),
+		new THREE.MeshBasicMaterial({ transparent: true ,color: 0xFFCCFF, opacity: .5 }),
+		new THREE.MeshBasicMaterial({ transparent: true ,color: 0xCCFFCC, opacity: .5 }),
+		new THREE.MeshBasicMaterial({ transparent: true ,color: 0xFFCCCC, opacity: .5 }),
+		new THREE.MeshBasicMaterial({ transparent: true ,color: 0xCCFFCC, opacity: .5 }),
+		new THREE.MeshBasicMaterial({ transparent: true ,color: 0xFF99CC, opacity: .5 }),
 
-	cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+
+
+
+
+	];
+	cube = new THREE.Mesh(cubeGeometry, new THREE.MeshFaceMaterial(cubeMaterials));
 
 	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
 	egh.material.linewidth = 2;
@@ -23,18 +33,21 @@ function makeScene(){
 
 	scene.add(cube);
 
-	var geometry = new THREE.SphereGeometry( 50, 32, 32 );
+	var geometry = new THREE.SphereGeometry( 2, 32, 32 );
 	var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
 	sphere = new THREE.Mesh( geometry, material );
+	sphere.position.x = 0;
+	sphere.position.y = 0;
+	sphere.position.z = 0;
 	scene.add( sphere );
 
 
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
 
-	camera.position.y = 350;
-	camera.position.x = 350;
+	camera.position.y = 20;
+	camera.position.x = 10;
 
-	camera.position.z = 2000;
+	camera.position.z = 50;
 
 	scene.add(camera);
 	camera.lookAt(cube.position);
