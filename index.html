@@ -3,9 +3,12 @@
   <meta charset="utf-8" />
 
   <title>Bouncing Balls</title>
-  <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+
+  <script type="text/javascript" src="jquery-latest.min.js"></script>
   <script type="text/javascript" src="three.min.js"></script>
   <script type="text/javascript" src="sylvester.js"></script>
+<script src="js/OrbitControls.js"></script>
 
   <script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
   <script type="text/javascript" src="sceneBuilder.js"></script>
@@ -31,8 +34,47 @@
 </script>
 
 </head>
-<body onload="mainLoop()">
+<body onload="mainLoop()" class="mainCont">
   <div id="rendering"></div>
+  <div id="controls" class="toolbox">
+    <div class="label">initial velocity</div>
+
+    <div class="vectors">
+      <span class="fieldLabel"> x <input type="number" class="vectIn" id="inity" value="0" name="inity"></input></span>
+      <span class="fieldLabel">y <input type="number" class="vectIn" id="initx" value="0" name="initx"></input></span>
+      <span class="fieldLabel">z <input type="number" class="vectIn" id="inity" value="0" name="inity"></input></span>
+
+    </div>
+    <div class="label">initial position</div>
+    <div class="vectors">
+      <span  class="fieldLabel">x <input type="number" class="vectIn" id="inity" value="0" name="inity"></input></span>
+      <span >y <input type="number" class="vectIn" id="initx" value="0" name="initx"></input></span>
+      <span class="fieldLabel">z <input type="number" class="vectIn" id="initz" value="0" name= "initz"></input></span>
+
+    </div>
+    <div class="label">timestep (milliseconds)</div>
+    <div class="vectors">
+      <span>h <input type="number" class="vectIn" id="initx" value="0" name="initx"></input></span>
+    </div>
+    <div class="label">material</div>
+    <div class="vectors">
+      <span class="fieldLabel">elasticity <input type="number" class="vectIn" id="initx" value=".8" name="initx"></input></span>
+      <span class="fieldLabel">friction <input type="number" class="vectIn" id="inity" value=".1" name="inity"></input></span>
+
+    </div>
+    <div class="label">physics</div>
+    <div class="vectors">
+      <span class="fieldLabel">gravity <input type="number" class="vectIn" id="initx" value=".8" name="initx"></input></span>
+      <span class="fieldLabel">air resistance <input type="number" class="vectIn" id="inity" value=".1" name="inity"></input></span>
+
+    </div>
+    <div class="vectors">
+      <span class="control" id="playbutton">play</span>
+      <span class="control grayed" id="pausebutton">pause</span>
+      <span class="control">reset</span>
+    </div>
+
+  </div>
 </body>
 
 

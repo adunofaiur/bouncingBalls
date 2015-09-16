@@ -1,0 +1,44 @@
+.mainCont{
+display: flex;
+
+}
+.toolbox{
+	display: flex;
+	flex-direction: column;
+}
+.vectors{
+	display: flex;
+	width: 300px;
+
+}
+.vectIn{
+	width: 40px;
+	margin-right: 8px;
+	border-style: solid;
+	border-width: 0 0 1px 0;
+	text-align: right;
+}
+
+.control{
+	font-size: 32px;
+	line-height: 32px;
+	margin-right: 12px;
+	color: lightblue;
+	cursor: pointer;
+	font-style: lighter;
+	font-weight: 100px;
+}
+.grayed{
+	color: lightgray;
+	cursor: auto;
+}
+.label{
+	color: darkgray;
+}
+.fieldLabel{
+
+}
+body{
+	font-family: calibri;
+
+}

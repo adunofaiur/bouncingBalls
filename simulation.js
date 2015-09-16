@@ -2,23 +2,19 @@
 
 
 
-var GRAVITY = $V([0, -9.8, 0]);
 
-var ELASTIC_COEF = .8;
-var FRICTION_COEF = .1;
-
-function initCollidables(){
-	var p1 = $P($V([18, 0, 0]), $V([-1, 0, 0]));
+function collideableWalls(){
+	var p1 = $P($V([8, 0, 0]), $V([-1, 0, 0]));
 	
-	var p2 = Plane.create($V([-16, 0, 0]), $V([1, 0, 0]));
+	var p2 = Plane.create($V([-8, 0, 0]), $V([1, 0, 0]));
 
-	var p3 = Plane.create($V([0, 16, 0]), $V([0, -1, 0]));
+	var p3 = Plane.create($V([0, 8, 0]), $V([0, -1, 0]));
 
-	var p4 = Plane.create($V([0, -16, 0]), $V([0, 1, 0]));
+	var p4 = Plane.create($V([0, -8, 0]), $V([0, 1, 0]));
 
-	var p5 = Plane.create($V([0, 0, 16]), $V([0, 0, -1]));
+	var p5 = Plane.create($V([0, 0, 8]), $V([0, 0, -1]));
 
-	var p6 = Plane.create($V([0, 0, -16]), $V([0, 0, 1]));
+	var p6 = Plane.create($V([0, 0, -8]), $V([0, 0, 1]));
 	var vals =  [p1, p2, p3, p4, p5, p6];
 	for (v in vals){
 		vals[v].col_type = 'plane';
@@ -27,48 +23,37 @@ function initCollidables(){
 
 }
 
-var collidables = initCollidables();
 
 
 
-function State(initialAcceleration, priorState){
-
-	if(priorState){
-		this.acceleration = priorState.acceleration.dup();
-		
-		this.velocity = priorState.velocity.dup();
-
-	}else{
-		this.acceleration = $V([0, -9.8, 0]);
-		this.velocity = $V([10, 0, 0])
-
-	}
-}
-//
-function calculateAcceleration(currentAccel, priorAccel, newVelocity, oldVelocity){
+function accelerate(moveable, oldmoveable, forces){
 	
-	//forces, of which there are presently none
-	var air = oldVelocity.multiply(-0.02);
-	currentAccel = GRAVITY.add(air);
-	return currentAccel;
-	//oldAccel.add(GRAVITY);
-}
-function calculateVelocity(currentAccel, priorAccel, oldVelocity, ts){
-	var accelerator = priorAccel.multiply(ts/1000);
-	var newVel = oldVelocity.add(accelerator);
+	moveable.acceleration = $V([0, 0, 0])
+	//generic forces
+	for(var i = 0; i < forces.length; i++){
+		var force = forces[i];
+		if(force.forceType == 'vector'){
+			moveable.acceleration = moveable.acceleration.add(force.force);
+		}
+	}
+	//air res, hardcoded
+	moveable.acceleration.subtract(moveable.velocity.multiply(AIR_RESISTANCE));
 
-	return newVel;
+}
+function velocerate(moveable, oldmoveable, ts){
+	
+	var oldAccel = oldmoveable.acceleration.multiply(ts/1000);
+	moveable.velocity = oldmoveable.velocity.add(oldAccel);
+
 }
 
-function calculatePosition(sphereArg, oldVel, newVel, ts){
-	var finalMove = oldVel.add(newVel);
+function reposition(moveable, oldmoveable, ts){
+	
+	var finalMove = oldmoveable.velocity.add(moveable.velocity);
 	finalMove = finalMove.multiply(.5);
 	finalMove = finalMove.multiply(ts/1000);
 
-	var i = sphereArg.position.x + finalMove.e(1);
-	var j = sphereArg.position.y + finalMove.e(2);
-	var k = sphereArg.position.z + finalMove.e(3);
-	return $V([i, j, k]);
+	moveable.position = moveable.position.add(finalMove);
 }
 
 
@@ -88,29 +73,48 @@ function didCollide(collidable, collidableType, pos1, pos2){
 		var pointInPlane2 = pos2.subtract(collidable.anchor);
 		var dist2 = pointInPlane2.dot(collidable.normal);
 		if(sameSign(dist1, dist2)){
-			return -1;
+			return {time: -1};
 		}
 		else{
 			var fract = dist1 / (dist1 - dist2);
 
-			return fract;
+			return {time: fract, normal: collidable.normal}
 		}
 
 	}
+	else if (collidableType == 'ball'){
+		var dist1 = magnitude(collidable.position.subtract(pos1));
+		var dist2 = magnitude(collidable.position.subtract(pos2));
+		if(dist2 < 4){
+			var fract = (dist1-4)/ (dist1-4 - dist2-4)
+			var n = pos1.subtract(collidable.position).multiply(1);
+			return {time: fract, normal: n.toUnitVector(), ctype: 'ball'}
+		}else{
+			return {time: -1}
+		}
+	}
 	else{
-		return -1;
+		return {time: -1};
 	}
 }
-function collisionDetect(sphere, pos1, pos2){
-	//dummy right now, if pos2 is out of bounds we've collided. do it right later
-
+function detectCollision(moveable, oldmoveable, collidables){
+	var responses = [];
 	for(var i = 0; i < collidables.length; i++){
-		var fract = didCollide(collidables[i], collidables[i].col_type, pos1, pos2);
-		if (fract > -1){
-			return {time: fract, normal: collidables[i].normal};
-		}	
+		if((collidables[i].rendering && collidables[i].rendering != moveable.rendering) || !collidables[i].rendering){
+			var fract = didCollide(collidables[i], collidables[i].col_type, moveable.position, oldmoveable.position);
+		
+			if (fract.time > -1){
+				responses.push(fract);
+			}	
+
+		}
 	}
-	return -1;
+	if(responses.length > 0){
+		return responses;
+	}
+
+
+	return [];
 }
 
 function distancePointPlane(point, plane){
@@ -124,79 +128,85 @@ function magnitude(sylvVect){
 	return mag;
 }
 
-function collideVelcoity(oldVel, planeNormal){
-	var normalVel = oldVel.dot(planeNormal);
+function collisionVelocerate(moveable, planeNormal){
+	
+	var ELASTIC_COEFFICIENT = moveable.elasticity;
+
+	var normalVel = moveable.velocity.dot(planeNormal);
 	normalVel = planeNormal.multiply(normalVel);
-	var tangVel = oldVel.subtract(normalVel);
-	var elasticResp = normalVel.multiply(-ELASTIC_COEF);
-	var interimTerm = Math.max(magnitude(normalVel.multiply(1-FRICTION_COEF), magnitude(tangVel)));
-	var frictResp = tangVel.subtract(tangVel.multiply(interimTerm));
-	var finalVel = elasticResp.add(frictResp); 
-	return finalVel;
+	
+	var tangVel = moveable.velocity.subtract(normalVel);
+	var elasticResp = normalVel.multiply(-ELASTIC_COEFFICIENT);
+	var frictResp = tangVel.multiply(1-FRICTION_COEFFICIENT);
+
+	var finalVel = elasticResp.add(frictResp);
+	moveable.velocity = finalVel;
 
 }
-function isResting(state, sphere){
-	if(magnitude(state.velocity) < .25 && sphere.position.y < -17.95){
+function isResting(sPrime){
+	if(magnitude(sPrime.velocity) < .25 && sPrime.position.y < -17.95){
 		console.log('stahp')
 		return true;
 	}
-	console.log("a: " + magnitude(state.acceleration) + " b: "  + magnitude(state.velocity));
 
 	return false;
+
 }
-function eulerStep(priorState, sphere){
-	var t = 0;
-	var timeStepRemaining =  timeStep - t;
-	var ts = timeStep;
-	var updatedState;
+function eulerStep(state){
+	
 
-	while(timeStepRemaining > 0){
-			updatedState = new State(GRAVITY, priorState);
-			var priorPos = $V([sphere.position.x, sphere.position.y, sphere.position.z]);
+	for (var k = 0; k < state.moveables.length; k++){
 
+		var t = 0;
+		var timeStepRemaining =  timeStep - t;
+		var ts = timeStep;
 
-			updatedState.acceleration = calculateAcceleration(updatedState.acceleration, priorState.acceleration, updatedState.velocity, priorState.velocity);
-			updatedState.velocity = calculateVelocity(updatedState.acceleration, priorState.acceleration, priorState.velocity, ts);
-			calculatePosition(sphere, priorState.velocity, updatedState.velocity, ts);
-			var priorPos = $V([sphere.position.x, sphere.position.y, sphere.position.z]);
-			var newPos = calculatePosition(sphere, priorState.velocity, updatedState.velocity, ts);
-			updatedState.pos = newPos;
+		while(timeStepRemaining > 0){
+			
+			var sPrime = state.moveables[k];
+			var s = state.oldmoveables[k];
 
-			var fractTime = collisionDetect(sphere, priorPos, newPos);
-			if(fractTime.time > -1){
-				ts = fractTime.time * timeStep;
-				var collisionState = new State(GRAVITY, priorState);
+			accelerate(sPrime, s, state.forces);
+			velocerate(sPrime, s, ts);
+			reposition(sPrime, s, ts);
+			var collisionDetails = detectCollision(sPrime, s, state.collidables);
 
-				var priorPos = $V([sphere.position.x, sphere.position.y, sphere.position.z]);
-
-
-				collisionState.acceleration = calculateAcceleration(collisionState.acceleration, priorState.acceleration, collisionState.velocity, priorState.velocity);
-				collisionState.velocity = calculateVelocity(collisionState.acceleration, priorState.acceleration, priorState.velocity, ts);
+			if(collisionDetails.length > 0){
 				
-				collisionState.velocity = collideVelcoity(collisionState.velocity, fractTime.normal);
-				var priorPos = $V([sphere.position.x, sphere.position.y, sphere.position.z]);
-				var newPos = calculatePosition(sphere, priorState.velocity, collisionState.velocity, ts);
+				ts = collisionDetails[0].time * timeStep;
+				//single response
+				if(collisionDetails.length == 1){
+					var detail = collisionDetails[0];
+					sPrime = s.dup();
+					accelerate(sPrime, s, state.forces);
+					velocerate(sPrime, s, ts);
+					collisionVelocerate(sPrime, detail.normal);
+					
+						reposition(sPrime, sPrime, ts);
 
-				priorState = collisionState;
-				updatedState = collisionState;
+					
 				timeStepRemaining = timeStepRemaining - ts
-
+				if(timeStepRemaining < .1){
+					timeStepRemaining = 0;
+				}
+				state.oldmoveables[k] = sPrime.dup();
+				state.moveables[k] = sPrime.dup();
+			}
 
 			}else{
 				timeStepRemaining = 0;
 			}
+			
+			if(isResting(sPrime)){
+				sPrime.velocity = $V([0, 0, 0]);
+				sPrime.acceleration = $V([0, 0, 0]);
+			}
+	
+		}
 
 	}
 
-	if(isResting(updatedState, sphere)){
-		updatedState.velocity = $V([0, 0, 0]);
-		updatedState.acceleration = $V([0, 0, 0]);
-	}
-	sphere.position.x =  updatedState.pos.e(1);
-	sphere.position.y =  updatedState.pos.e(2);
 
-	sphere.position.z =  updatedState.pos.e(3);
-
-	return updatedState;
-
+				
 }
+
