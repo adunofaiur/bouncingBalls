@@ -1,15 +1,27 @@
 .mainCont{
-display: flex;
-
+	display: flex;
+}
+.ballLabel{
+	color: lightgreen;
+	font-size: 22px;
+	line-height: 32px;
 }
 .toolbox{
-	display: flex;
+	display: inline-flex;
+
 	flex-direction: column;
+	flex-size: 300;
 }
 .vectors{
 	display: flex;
 	width: 300px;
 
+}
+.renderingHolder{
+	width: 700px;
+	display: inline-flex;
+	flex-size: 700;
+	height: 700px;
 }
 .vectIn{
 	width: 40px;
@@ -38,7 +50,58 @@ display: flex;
 .fieldLabel{
 
 }
+.pulsarbutton{
+	cursor: pointer;
+}
+
+.forceLabel{
+	font-size: 22px;
+	line-height: 32px;
+
+}
+.force{
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#91b4c6), color-stop(100%,#95b5c6));
+	width: 360px;
+	height: 32px;
+		color: white;
+	margin-bottom: 12px;
+
+}
+
+.added{
+		background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#258dc8), color-stop(100%,#258dc8));
+
+}
+.newcforce{
+	    float: right;
+	    font-size: 18;
+	color: lightblue;
+	cursor: pointer;
+}
+.forceAddRemove{
+	font-size: 26px;
+	cursor: pointer;
+	width: 30px;
+	text-align: center;
+	cursor: pointer;
+}
+.forceAddRemove:hover{
+	color: #CCCCCC;
+}
+
+.forceControls{
+	margin-left: 8px;
+}
+.forceBox{
+	margin-left: 12px;
+}
+
+
+
 body{
-	font-family: calibri;
+	font-family: arial;
 
 }

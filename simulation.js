@@ -2,7 +2,6 @@
 
 
 
-
 function collideableWalls(){
 	var p1 = $P($V([8, 0, 0]), $V([-1, 0, 0]));
 	
@@ -34,10 +33,18 @@ function accelerate(moveable, oldmoveable, forces){
 		var force = forces[i];
 		if(force.forceType == 'vector'){
 			moveable.acceleration = moveable.acceleration.add(force.force);
+		}else if(force.forceType == "columb"){
+			var cNormal = moveable.position.subtract(force.anchor).toUnitVector();
+			var dist = magnitude(moveable.position.subtract(force.anchor)) - 2;
+			if((dist*dist < .0001)){
+				dist = .01;
+			}
+			var cForce = cNormal.multiply(force.constant / (dist*dist));
+			moveable.acceleration = moveable.acceleration.add(cForce);
 		}
 	}
 	//air res, hardcoded
-	moveable.acceleration.subtract(moveable.velocity.multiply(AIR_RESISTANCE));
+	moveable.acceleration = moveable.acceleration.subtract(moveable.velocity.multiply(AIR_RESISTANCE));
 
 }
 function velocerate(moveable, oldmoveable, ts){
@@ -181,8 +188,7 @@ function eulerStep(state){
 					accelerate(sPrime, s, state.forces);
 					velocerate(sPrime, s, ts);
 					collisionVelocerate(sPrime, detail.normal);
-					
-						reposition(sPrime, sPrime, ts);
+					reposition(sPrime, sPrime, ts);
 
 					
 				timeStepRemaining = timeStepRemaining - ts

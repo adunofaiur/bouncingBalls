@@ -35,46 +35,63 @@
 
 </head>
 <body onload="mainLoop()" class="mainCont">
-  <div id="rendering"></div>
   <div id="controls" class="toolbox">
     <div class="label">initial velocity</div>
 
     <div class="vectors">
-      <span class="fieldLabel"> x <input type="number" class="vectIn" id="inity" value="0" name="inity"></input></span>
-      <span class="fieldLabel">y <input type="number" class="vectIn" id="initx" value="0" name="initx"></input></span>
-      <span class="fieldLabel">z <input type="number" class="vectIn" id="inity" value="0" name="inity"></input></span>
+      <span class="fieldLabel">x <input type="number" class="vectIn" id="initx" value="0" name="inity"></input></span>
+      <span class="fieldLabel">y <input type="number" class="vectIn" id="inity" value="0" name="initx"></input></span>
+      <span class="fieldLabel">z <input type="number" class="vectIn" id="initz" value="0" name="inity"></input></span>
 
     </div>
     <div class="label">initial position</div>
     <div class="vectors">
-      <span  class="fieldLabel">x <input type="number" class="vectIn" id="inity" value="0" name="inity"></input></span>
-      <span >y <input type="number" class="vectIn" id="initx" value="0" name="initx"></input></span>
-      <span class="fieldLabel">z <input type="number" class="vectIn" id="initz" value="0" name= "initz"></input></span>
+      <span  class="fieldLabel">x <input type="number" class="vectIn" id="initxx" value="0" name="inity"></input></span>
+      <span >y <input type="number" class="vectIn"  value="0" id="inityy"></input></span>
+      <span class="fieldLabel">z <input type="number" class="vectIn" id="initzz" value="0" name= "initz"></input></span>
 
     </div>
     <div class="label">timestep (milliseconds)</div>
     <div class="vectors">
-      <span>h <input type="number" class="vectIn" id="initx" value="0" name="initx"></input></span>
+      <span>h <input type="number" class="vectIn" value="10" id="ts"></input></span>
     </div>
     <div class="label">material</div>
     <div class="vectors">
-      <span class="fieldLabel">elasticity <input type="number" class="vectIn" id="initx" value=".8" name="initx"></input></span>
-      <span class="fieldLabel">friction <input type="number" class="vectIn" id="inity" value=".1" name="inity"></input></span>
+      <span class="fieldLabel">elasticity <input type="number" class="vectIn" id="me" value=".8" ></input></span>
+      <span class="fieldLabel">friction <input type="number" class="vectIn" id="mf" value=".1" ></input></span>
 
     </div>
     <div class="label">physics</div>
     <div class="vectors">
-      <span class="fieldLabel">gravity <input type="number" class="vectIn" id="initx" value=".8" name="initx"></input></span>
-      <span class="fieldLabel">air resistance <input type="number" class="vectIn" id="inity" value=".1" name="inity"></input></span>
+      <span class="fieldLabel">gravity <input type="number" class="vectIn" id="gv" value="-9.8" name="initx"></input></span>
+      <span class="fieldLabel">air resistance <input type="number" class="vectIn" id="ar" value=".1" name="inity"></input></span>
 
     </div>
     <div class="vectors">
       <span class="control" id="playbutton">play</span>
       <span class="control grayed" id="pausebutton">pause</span>
-      <span class="control">reset</span>
+      <span class="control grayed" id="resetbutton">restart</span>
     </div>
 
   </div>
+  <div class="renderingHolder"></div>
+  <div class="forceBox">
+    <div class="forceLabel">Columb Forces<span class="newcforce" onclick="newCForce()">new</span></div>
+    <div class="force" fid='1'>
+      <div class="forceControls">
+        <span class="forceDetail">x <input type="number" step=".05" class="vectIn" value="0"></input></span>
+        <span class="forceDetail">y <input type="number" step=".05" class="vectIn" value="0"></input></span>
+        <span class="forceDetail">z <input type="number" step=".05" class="vectIn" value="0"></input></span>
+        <span class="forceDetail">k <input type="number" step=".05" class="vectIn" value="5"></input></span>
+      </div>
+      <div class="forceAddRemove" state="unadded" onclick="newColumb(event)">+</div>
+
+
+    </div>
+
+
+  </div>
+
 </body>
 
 
