@@ -44,7 +44,8 @@ function accelerate(moveable, oldmoveable, forces){
 		}
 	}
 	//air res, hardcoded
-	moveable.acceleration = moveable.acceleration.subtract(moveable.velocity.multiply(AIR_RESISTANCE));
+	var airOverG = AIR_RESISTANCE / moveable.mass;
+	moveable.acceleration = moveable.acceleration.subtract(moveable.velocity.multiply(airOverG));
 
 }
 function velocerate(moveable, oldmoveable, ts){
@@ -151,7 +152,7 @@ function collisionVelocerate(moveable, planeNormal){
 
 }
 function isResting(sPrime){
-	if(magnitude(sPrime.velocity) < .25 && sPrime.position.y < -17.95){
+	if(magnitude(sPrime.velocity) < .4 && sPrime.position.e(2) < -7.95){
 		console.log('stahp')
 		return true;
 	}
@@ -206,6 +207,7 @@ function eulerStep(state){
 			if(isResting(sPrime)){
 				sPrime.velocity = $V([0, 0, 0]);
 				sPrime.acceleration = $V([0, 0, 0]);
+				sPrime.resting = true;
 			}
 	
 		}

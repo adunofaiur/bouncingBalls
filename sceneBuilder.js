@@ -35,6 +35,7 @@ function Ball(position, velocity, acceleration, rendering, properties){
 	if(properties){
 		this.elasticity = properties.elasticity;
 		this.mass = properties.mass;
+
 	}
 }
 
@@ -197,6 +198,7 @@ function getSimProperities(){
 	var mf = parseFloat($('#mf').val());
 	var gv = parseFloat($('#gv').val());
 	var ar = parseFloat($('#ar').val());
+	var mass = parseFloat($('#mass').val());
 
 	return {
 		position: position,
@@ -205,7 +207,9 @@ function getSimProperities(){
 		me: me,
 		mf: mf,
 		gv: gv,
-		ar: ar
+		ar: ar,
+		mass: mass
+
 	};
 
 }
@@ -232,7 +236,7 @@ function initializeSim(props, state){
 	//initial, garunteed sphere
 	var initSphere = addSphereRendering(props.position);
 
-	var initBall = new Ball(props.position, props.velocity, $V([0, 0, 0]), initSphere, {elasticity: props.me, mass: 1});
+	var initBall = new Ball(props.position, props.velocity, $V([0, 0, 0]), initSphere, {elasticity: props.me, mass: props.mass});
 
 	//buncha other stuff
 	var gravity = new VectorForce($V([0, props.gv, 0]));
@@ -312,6 +316,25 @@ function mainLoop(){
 				moveable.rendering.position.z = moveable.position.e(3);
 
 			}
+
+	 	//output to table
+
+	 	$('#tpx').text(simState.moveables[0].position.e(1).toFixed(2));
+	 	$('#tpy').text(simState.moveables[0].position.e(2).toFixed(2));
+	 	$('#tpz').text(simState.moveables[0].position.e(3).toFixed(2));
+
+	 	$('#tvx').text(simState.moveables[0].velocity.e(1).toFixed(2));
+	 	$('#tvy').text(simState.moveables[0].velocity.e(2).toFixed(2));
+	 	$('#tvz').text(simState.moveables[0].velocity.e(3).toFixed(2));
+
+
+	 	$('#tax').text(simState.moveables[0].acceleration.e(1).toFixed(2));
+	 	$('#tay').text(simState.moveables[0].acceleration.e(2).toFixed(2));
+	 	$('#taz').text(simState.moveables[0].acceleration.e(3).toFixed(2));
+
+	 	if(simState.resting){
+	 		isplaying = false;
+	 	}
 
 	 	if(isplaying){
 	 		requestAnimationFrame(render);
