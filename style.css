@@ -197,15 +197,13 @@ font-size: 22px;
 	border-width:0px 0px 0px 0px;
 }
 .CSSTableGenerator tr:first-child td{
-		background:-o-linear-gradient(bottom, #00a1ff 5%, #00a1ff 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #00a1ff), color-stop(1, #00a1ff) );
-	background:-moz-linear-gradient( center top, #00a1ff 5%, #00a1ff 100% );
-	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#00a1ff", endColorstr="#00a1ff");	background: -o-linear-gradient(top,#00a1ff,00a1ff);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#258dc8), color-stop(100%,#258dc8));	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#00a1ff", endColorstr="#00a1ff");	background: -o-linear-gradient(top,#00a1ff,00a1ff);
 
 	background-color:#00a1ff;
 	border:0px solid #000000;
 	text-align:center;
 	border-width:0px 0px 1px 1px;
-	font-size:10px;
+	font-size:12px;
 	font-family:Arial;
 	font-weight:bold;
 	color:#ffffff;
