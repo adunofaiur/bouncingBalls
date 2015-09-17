@@ -111,7 +111,7 @@ function makeScene(){
 
 	scene.add(camera);
 	camera.lookAt(cube.position);
-
+	var  controls = new THREE.OrbitControls(camera, renderer.domElement)
 	var skyboxGeometry = new THREE.CubeGeometry(10000, 10000, 10000);
 	var skyboxMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
 	var skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
