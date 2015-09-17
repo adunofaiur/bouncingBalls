@@ -1,3 +1,17 @@
+Setup:
+
+works best in the latest version of Google Chrome for OS X 10.10 (formatting is off in safari), just open the index.html
+
+Note:
+
+Acceleration, velocity, position, eurler integration, rest conditions, conditions, etc. are found in simulation.js
+
+Synchronization of Euler steps to frame output, I/O with the webpage, and the creation of states is found in sceneBuilder.js
+
+Usage:
+
+In order to change the values of an active Columb force, kindly press 'X' to deactivate it and then '+' to reactivate
+
 Credit:
 
 sylvester.js for basic vector manipulation (add, mult, dot) and a basic plane object
