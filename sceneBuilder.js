@@ -1,31 +1,18 @@
-var renderer, cube, sphere, scene, camere;
+var renderer, cube, sphere, scene, camere, points, colors = [], pMaterial, pGeo;
 
 var timeStep = 10;
 var isplaying =  false;
 var FRICTION_COEFFICIENT = .1;
 var AIR_RESISTANCE = .1;
-
+var pSize = [];
+var pOpacity = [];
+pointsIndex = 0;
 
 var tempForceHolder = [];
-var bob;
-function bobulate(){
-	var geometry = new THREE.Geometry();
-	var material = new THREE.PointsMaterial({color: 0x00ff00, size: 1});
 
-	geometry.vertices.push(
-	);
-
-	var sprite = new THREE.Points(geometry, material);
-	sprite.position.x = p.e(1);
-	sprite.position.y = p.e(2);
-	sprite.position.z = p.e(3);
-	scene.add(sprite)
-	bob = sprite;
-}
-bobulate();
-
-var particleList = bob.vertices;
-
+var particleList = [];
+var pointList;
+var pli = 0;
 var simState;
 
 function buildDiv(className){
@@ -41,29 +28,6 @@ function buildSpan(className){
 
 //Variables used to define the rules of the simulation
 
-function Ball(position, velocity, acceleration, rendering, properties){
-	this.position = position.dup();
-	this.velocity = velocity.dup();
-	this.acceleration = acceleration.dup();
-	this.rendering = rendering;
-	this.movableType = "ball"
-	this.col_type = "ball";
-	if(properties){
-		this.elasticity = properties.elasticity;
-		this.mass = properties.mass;
-
-	}
-}
-
-Ball.prototype.dup = function(){
-	var pos = this.position.dup();
-	var vel = this.velocity.dup();
-	var acc = this.acceleration.dup();
-	var el = this.elasticity;
-	var m = this.mass;
-
-	return new Ball(pos, vel, acc, this.rendering, {elasticity: el, mass: m});
-}
 
 function VectorForce(vector){
 	this.force = vector;
@@ -112,6 +76,31 @@ var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
 
 	camera.position.z = 50;
 	scene.add(camera);
+ 	pGeo = new THREE.Geometry();
+    var sprite = THREE.ImageUtils.generateDataTexture(16, 16, 0x00FF00);
+	for ( i = 0; i < 2501; i ++ ) {
+
+		var vertex = new THREE.Vector3();
+		vertex.x = 0;
+		vertex.y = 0;
+		vertex.z = 0;
+
+		pGeo.vertices.push( vertex );
+
+		colors[ i ] = new THREE.Color( 0x00ff00 );
+
+	}
+	pGeo.colors = colors;
+	pMaterial = new THREE.PointsMaterial( { size: 1, vertexColors: THREE.VertexColors, alphaTest: 0.5, transparent: true } );
+
+	points = new THREE.Points( pGeo, pMaterial );
+	points.position.x = 0;
+	points.position.y = 0;
+	points.position.z = 0;
+	scene.add( points );
+
+
+
 	camera.lookAt(cube.position);
 	var  controls = new THREE.OrbitControls(camera, renderer.domElement)
 	var skyboxGeometry = new THREE.CubeGeometry(10000, 10000, 10000);
@@ -216,7 +205,7 @@ function particleSim(props){
 	var pg = new ConstantPosition($V([0, 0, 0]));
 	var dg = new DirectionGenSphere();
 	var sg = new SpeedGenN(3, 2);
-	var omniGen = new ParticleGenerator(0, 1, 5000, pg, dg, sg, function(){});
+	var omniGen = new ParticleGenerator(0, 5, 500, pg, dg, sg, function(){});
 	var nState = new State(forces, [omniGen], 0);
 	return nState;
 
@@ -234,7 +223,7 @@ function mainLoop(){
 	var props = getSimProperities();
     simState = particleSim(props);
 	
-    timeStep = 100;
+    timeStep = 32;
 
 
 
@@ -245,6 +234,9 @@ function mainLoop(){
 
 
 	function render() {
+		renderer.clear();
+
+		renderer.render(scene, camera);
 		var n = new Date();
 	    var frameTime = n.getTime();
 	    
@@ -254,7 +246,6 @@ function mainLoop(){
 	    var stepsGoneThrough = Math.floor(timeToConsider / timeStep);
 	    fragmentsOfTime = timeToConsider % timeStep;
 		preFrameTime = frameTime;
-	    renderer.render(scene, camera);
 	    
 	    if(stepsGoneThrough > 0){
 	    	console.log(('steps: ' + stepsGoneThrough.toString()));
@@ -266,16 +257,26 @@ function mainLoop(){
 		}
 		for (var i = 0; i < particleList.length; i++){
 			var p = particleList[i];
-			p.rendering.position.x = p.p.e(1);
-			p.rendering.position.y = p.p.e(2);
-			p.rendering.position.z = p.p.e(3);
 
+			var rend = points.geometry.vertices[p.rendering];
+
+
+
+
+			rend.x = p.p.e(1);
+			rend.y = p.p.e(2);
+			rend.z = p.p.e(3);
+
+			if(p.p.e(2) < -3){
+				points.geometry.colors[p.rendering] = new THREE.Color(0xFF0000);
+			}
 		}
-
+		points.geometry.verticesNeedUpdate = true;
+		points.geometry.colorsNeedUpdate = true;
 
 	 	if(simState.resting){
 	 		isplaying = false;
-	 	}
+		}
 
 	 	if(isplaying){
 	 		requestAnimationFrame(render);

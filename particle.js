@@ -8,27 +8,22 @@ function Particle(position, velocity, acceleration, rendering){
 	this.rendering = rendering;
 }
 
-var bob;
-function bobulate(){
-	var geometry = new THREE.Geometry();
-	var material = new THREE.PointsMaterial({color: 0x00ff00, size: 1});
-
-	geometry.vertices.push(
-	);
-
-	var sprite = new THREE.Points(geometry, material);
-	sprite.position.x = p.e(1);
-	sprite.position.y = p.e(2);
-	sprite.position.z = p.e(3);
-	scene.add(sprite)
-	bob = sprite;
-}
 
 function makeSprite(p){
-	var x = p.e(1);
-	var y = p.e(2);
-	var z = p.e(3);
-	bob.geometry.vertices.push(new THREE.Vector3(x, y, z));
+	var j = pointsIndex;
+	if(pointsIndex > 2500){
+		pointsIndex = 0;
+		j = 0;
+	}
+	pointsIndex++;
+	points.geometry.vertices[j].x = p.e(1); 
+		points.geometry.vertices[j].y = p.e(2); 
+
+	points.geometry.vertices[j].z = p.e(3); 
+
+	return j;
+
+
 }
 
 function UniformDist(min, max){
