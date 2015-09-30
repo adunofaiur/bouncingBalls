@@ -25,15 +25,15 @@ function collideableWalls(){
 
 
 
-function accelerate(moveable, oldmoveable, forces){
+function accelerate(particle, forces){
 	
-	moveable.acceleration = $V([0, 0, 0])
+	particle.a = $V([0, 0, 0])
 	//generic forces
 	for(var i = 0; i < forces.length; i++){
 		var force = forces[i];
 		if(force.forceType == 'vector'){
-			moveable.acceleration = moveable.acceleration.add(force.force);
-		}else if(force.forceType == "columb"){
+			particle.a = particle.a.add(force.force);
+		}/*else if(force.forceType == "columb"){
 			var cNormal = moveable.position.subtract(force.anchor).toUnitVector();
 			var dist = magnitude(moveable.position.subtract(force.anchor)) - 2;
 			if((dist*dist < .0001)){
@@ -41,27 +41,27 @@ function accelerate(moveable, oldmoveable, forces){
 			}
 			var cForce = cNormal.multiply(force.constant / (dist*dist));
 			moveable.acceleration = moveable.acceleration.add(cForce);
-		}
+		}*/
 	}
 	//air res, hardcoded
-	var airOverG = AIR_RESISTANCE / moveable.mass;
-	moveable.acceleration = moveable.acceleration.subtract(moveable.velocity.multiply(airOverG));
+	//var airOverG = AIR_RESISTANCE / moveable.mass;
+	//particle.a = particle.a.subtract(particle.a.multiply(airOverG));
 
 }
-function velocerate(moveable, oldmoveable, ts){
+function velocerate(particle, ts){
 	
-	var oldAccel = oldmoveable.acceleration.multiply(ts/1000);
-	moveable.velocity = oldmoveable.velocity.add(oldAccel);
+	var oldAccel = particle.priorA.multiply(ts/1000);
+	particle.v = particle.priorV.add(oldAccel);
 
 }
 
-function reposition(moveable, oldmoveable, ts){
+function reposition(particle, ts){
 	
-	var finalMove = oldmoveable.velocity.add(moveable.velocity);
+	var finalMove = particle.priorV.add(particle.v);
 	finalMove = finalMove.multiply(.5);
 	finalMove = finalMove.multiply(ts/1000);
 
-	moveable.position = moveable.position.add(finalMove);
+	particle.p = particle.p.add(finalMove);
 }
 
 
@@ -72,7 +72,7 @@ function sameSign(a, b){
 	else{
 		return false;
 	}
-}
+}/*
 function didCollide(collidable, collidableType, pos1, pos2){
 
 	if(collidableType == 'plane'){
@@ -150,7 +150,7 @@ function collisionVelocerate(moveable, planeNormal){
 	var finalVel = elasticResp.add(frictResp);
 	moveable.velocity = finalVel;
 
-}
+}*/
 function isResting(sPrime){
 	if(magnitude(sPrime.velocity) < .4 && sPrime.position.e(2) < -7.95){
 		console.log('stahp')
@@ -163,56 +163,34 @@ function isResting(sPrime){
 function eulerStep(state){
 	
 
-	for (var k = 0; k < state.moveables.length; k++){
 
-		var t = 0;
-		var timeStepRemaining =  timeStep - t;
-		var ts = timeStep;
+	var t = 0;
+	var timeStepRemaining =  timeStep - t;
+	var ts = timeStep;
 
-		while(timeStepRemaining > 0){
-			
-			var sPrime = state.moveables[k];
-			var s = state.oldmoveables[k];
+	while(timeStepRemaining > 0){
 
-			accelerate(sPrime, s, state.forces);
-			velocerate(sPrime, s, ts);
-			reposition(sPrime, s, ts);
-			var collisionDetails = detectCollision(sPrime, s, state.collidables);
 
-			if(collisionDetails.length > 0){
-				
-				ts = collisionDetails[0].time * timeStep;
-				//single response
-				if(collisionDetails.length == 1){
-					var detail = collisionDetails[0];
-					sPrime = s.dup();
-					accelerate(sPrime, s, state.forces);
-					velocerate(sPrime, s, ts);
-					collisionVelocerate(sPrime, detail.normal);
-					reposition(sPrime, sPrime, ts);
-
-					
-				timeStepRemaining = timeStepRemaining - ts
-				if(timeStepRemaining < .1){
-					timeStepRemaining = 0;
-				}
-				state.oldmoveables[k] = sPrime.dup();
-				state.moveables[k] = sPrime.dup();
-			}
-
-			}else{
-				timeStepRemaining = 0;
-			}
-			
-			if(isResting(sPrime)){
-				sPrime.velocity = $V([0, 0, 0]);
-				sPrime.acceleration = $V([0, 0, 0]);
-				sPrime.resting = true;
-			}
-	
+		for (var i = 0; i < state.generators.length; i++){
+			state.generators[i].generate(state.t, ts);
 		}
+		for(var i = 0; i < particleList.length; i++){
+			var particle = particleList[i];
+			accelerate(particle, state.forces);
+			velocerate(particle, ts);
+			reposition(particle, ts);
+			particle.priorA = particle.a;
+			particle.priorV = particle.v;
 
+
+		}
+		
+		
+		timeStepRemaining = 0;
+		state.t += (timeStep/1000);
 	}
+
+	
 
 
 				

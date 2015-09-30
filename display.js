@@ -13,24 +13,6 @@ function makeScene(){
 	 
 	scene = new THREE.Scene;
 
-	var cubeGeometry = new THREE.CubeGeometry(500, 500, 500);
-	var cubeMaterial = new THREE.MeshBasicMaterial({ transparent: true ,color: 0x1ec876, opacity: 0 });
-
-	cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-
-	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
-	egh.material.linewidth = 2;
-	scene.add( egh );
-
-	cube.rotation.y = Math.PI * 45 / 180;
-
-	scene.add(cube);
-
-	var geometry = new THREE.SphereGeometry( 50, 32, 32 );
-	var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-	var sphere = new THREE.Mesh( geometry, material );
-	scene.add( sphere );
-
 
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
 
@@ -43,7 +25,7 @@ function makeScene(){
 	camera.lookAt(cube.position);
 
 	var skyboxGeometry = new THREE.CubeGeometry(10000, 10000, 10000);
-	var skyboxMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+	var skyboxMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.BackSide });
 	var skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
 	 
 	scene.add(skybox);

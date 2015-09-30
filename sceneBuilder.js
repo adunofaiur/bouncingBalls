@@ -7,8 +7,24 @@ var AIR_RESISTANCE = .1;
 
 
 var tempForceHolder = [];
+var bob;
+function bobulate(){
+	var geometry = new THREE.Geometry();
+	var material = new THREE.PointsMaterial({color: 0x00ff00, size: 1});
 
+	geometry.vertices.push(
+	);
 
+	var sprite = new THREE.Points(geometry, material);
+	sprite.position.x = p.e(1);
+	sprite.position.y = p.e(2);
+	sprite.position.z = p.e(3);
+	scene.add(sprite)
+	bob = sprite;
+}
+bobulate();
+
+var particleList = bob.vertices;
 
 var simState;
 
@@ -65,16 +81,10 @@ function ColumbPoint(anchor, constant, rendering){
 var GRAVITY = new VectorForce($V([0, -9.8, 0]));
 
 
-function State(moveables, forces, renderings){
-	this.moveables = moveables;
+function State(forces, generators, time){
 	this.forces = forces;
-	this.oldmoveables = [];
-	this.collidables = collideableWalls();
-	this.renderings = renderings;
-	for (var i = 0; i < moveables.length; i++){
-		this.oldmoveables.push(moveables[i].dup());
-		this.collidables.push(moveables);
-	}
+	this.generators = generators;
+	this.t = time;
 }
 //
 
@@ -85,8 +95,7 @@ function makeScene(){
 	renderer.setSize(width, height);
 	 $('.renderingHolder').append(renderer.domElement);
 	scene = new THREE.Scene;
-
-	var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
+var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
 	var cubeMaterials =[ new THREE.MeshLambertMaterial({ transparent: true ,color: 0x99CCFF, opacity: .0 }),
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFFCCFF, opacity: .0}),
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xCCFFCC, opacity: .0 }),
@@ -96,24 +105,17 @@ function makeScene(){
 
 	];
 	cube = new THREE.Mesh(cubeGeometry, new THREE.MeshFaceMaterial(cubeMaterials));
-	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
-	egh.material.linewidth = 2;
-	scene.add( egh );
-
-
-	scene.add(cube);
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
 
 	camera.position.y = 20;
 	camera.position.x = 20;
 
 	camera.position.z = 50;
-
 	scene.add(camera);
 	camera.lookAt(cube.position);
 	var  controls = new THREE.OrbitControls(camera, renderer.domElement)
 	var skyboxGeometry = new THREE.CubeGeometry(10000, 10000, 10000);
-	var skyboxMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+	var skyboxMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.BackSide });
 	var skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
 	 
 	scene.add(skybox);
@@ -152,21 +154,7 @@ pointLight = new THREE.PointLight(0xffffff);
 
 }
 
-function addSphereRendering(position){
 
-	var geometry = new THREE.SphereGeometry( 2, 32, 32 );
-	var material = new THREE.MeshLambertMaterial( {color: 0xffff00} );
-	var sphere = new THREE.Mesh( geometry, material );
-	sphere.position.x = position.e(1);
-	sphere.position.y = position.e(2);
-	sphere.position.z = position.e(3);
-	scene.add( sphere );
-	return sphere;
-}
-
-function resetVars(){
-
-}
 
 function resetSim(aState){
 	var simulationProperties = getSimProperities();
@@ -214,56 +202,25 @@ function getSimProperities(){
 
 }
 
-function pulsarRendering(anchor){
 
-	var geometry = new THREE.SphereGeometry( .5, 32, 32 );
-	var material = new THREE.MeshBasicMaterial( {color: 0x4444FF} );
-	var sphere = new THREE.Mesh( geometry, material );
-	sphere.position.x = anchor.e(1);
-	sphere.position.y = anchor.e(2);
-	sphere.position.z = anchor.e(3);
-	scene.add( sphere );
-	return sphere;
-}
-
-function initializeSim(props, state){
-	//remove all current spheres
-	if(state){
-		for (var i = 0; i < state.renderings.length; i++){
-			scene.remove(state.renderings[i]);
-		}
-	}
-	//initial, garunteed sphere
-	var initSphere = addSphereRendering(props.position);
-
-	var initBall = new Ball(props.position, props.velocity, $V([0, 0, 0]), initSphere, {elasticity: props.me, mass: props.mass});
-
-	//buncha other stuff
-	var gravity = new VectorForce($V([0, props.gv, 0]));
-	var forces = [gravity];
-	if(state){
-		for (var k = 0; k < state.forces.length; k++){
-		if(state.forces[k].forceType == 'columb'){
-			forces.push(state.forces[k]);
-		}
-	}
-	}
-	
-	var newState = new State([initBall], forces, [initBall.rendering]);
-	AIR_RESISTANCE = props.ar;
-	FRICTION_COEFFICIENT = props.mf
-
-	//get ativate columbs
-	var forces = $('.force');
-
-	return newState;
-
-
-}
 function initHTMLStuff(){
 	var inputs = $("input");
 	inputs.attr('step', '.05')
 }	
+
+
+function particleSim(props){
+	var gravity = new VectorForce($V([0, props.gv, 0]));
+	var forces = [gravity];
+	var generators = [];
+	var pg = new ConstantPosition($V([0, 0, 0]));
+	var dg = new DirectionGenSphere();
+	var sg = new SpeedGenN(3, 2);
+	var omniGen = new ParticleGenerator(0, 1, 5000, pg, dg, sg, function(){});
+	var nState = new State(forces, [omniGen], 0);
+	return nState;
+
+}
 function mainLoop(){
 	makeScene();
 	initHTMLStuff();
@@ -275,8 +232,17 @@ function mainLoop(){
 	var fragmentsOfTime = 0;
 
 	var props = getSimProperities();
-    simState = initializeSim(props);
+    simState = particleSim(props);
 	
+    timeStep = 100;
+
+
+
+
+
+
+
+
 
 	function render() {
 		var n = new Date();
@@ -297,40 +263,15 @@ function mainLoop(){
 
 	    for (var i = 0; i < stepsGoneThrough; i ++){
 	    	eulerStep(simState);
-
-			simState.oldmoveables = [];
-			simState.collidables = collideableWalls();
-
-			for(var j = 0; j < simState.moveables.length; j++){
-				var moveable = simState.moveables[j];
-				simState.oldmoveables.push(moveable.dup());
-				simState.collidables.push(moveable);
-			}
-		
 		}
-		for(var j = 0; j < simState.moveables.length; j++){
-				var moveable = simState.moveables[j];
+		for (var i = 0; i < particleList.length; i++){
+			var p = particleList[i];
+			p.rendering.position.x = p.p.e(1);
+			p.rendering.position.y = p.p.e(2);
+			p.rendering.position.z = p.p.e(3);
 
-				moveable.rendering.position.x = moveable.position.e(1);
-				moveable.rendering.position.y = moveable.position.e(2);
-				moveable.rendering.position.z = moveable.position.e(3);
+		}
 
-			}
-
-	 	//output to table
-
-	 	$('#tpx').text(simState.moveables[0].position.e(1).toFixed(2));
-	 	$('#tpy').text(simState.moveables[0].position.e(2).toFixed(2));
-	 	$('#tpz').text(simState.moveables[0].position.e(3).toFixed(2));
-
-	 	$('#tvx').text(simState.moveables[0].velocity.e(1).toFixed(2));
-	 	$('#tvy').text(simState.moveables[0].velocity.e(2).toFixed(2));
-	 	$('#tvz').text(simState.moveables[0].velocity.e(3).toFixed(2));
-
-
-	 	$('#tax').text(simState.moveables[0].acceleration.e(1).toFixed(2));
-	 	$('#tay').text(simState.moveables[0].acceleration.e(2).toFixed(2));
-	 	$('#taz').text(simState.moveables[0].acceleration.e(3).toFixed(2));
 
 	 	if(simState.resting){
 	 		isplaying = false;
