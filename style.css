@@ -25,6 +25,7 @@
 	padding-left: 8px;
 	padding-right: 8px;
 
+
 }
 .renderingHolder{
 	width: 700px;
@@ -56,6 +57,7 @@
 	cursor: pointer;
 	font-style: lighter;
 	font-weight: 100px;
+
 }
 .control:hover{
 		color: #72BCD4;

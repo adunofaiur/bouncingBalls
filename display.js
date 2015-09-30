@@ -1,6 +1,8 @@
 var renderer, cube, sphere, scene, camere;
 var timeStep = 1000;
+var particleList = [];
 
+ 
 function makeScene(){
 	var width = 700;
 	var height = 700;
