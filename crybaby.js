@@ -254,7 +254,7 @@ function basicProps(){
 function particleSim(props){
 	var gravity = new VectorForce($V([0, props.gv, 0]));
 	var forces = [gravity];
-	var gb = new GravityPoint($V([-15, 15, 0]), -5000, 2);
+	var gb = new GravityPoint($V([-15, 15, 0]), 5000, 2);
 	gb2 = new GravityPoint($V([-15, 15, 0]), 10, -1);
 
 	forces.push(gb);
