@@ -14,19 +14,6 @@ var particleList = [];
 var pointList;
 var pli = 0;
 var simState;
-
-function buildDiv(className){
-	var elem = document.createElement('div');
-	elem.className = className;
-	return elem;
-}
-function buildSpan(className){
-	var elem = document.createElement('span');
-	elem.className = className;
-	return elem;
-}
-
-//Variables used to define the rules of the simulation
 //units: 1 px = 1m
 
 
@@ -53,29 +40,23 @@ function collideableWalls(){
 
 }
 
-var GLOBAL_COLLIDABLES = collideableWalls();
+var GLOBAL_COLLIDABLES = [];
 
 
-
-function VectorForce(vector){
-	this.force = vector;
-	this.forceType = "vector";
+function buildDiv(className){
+	var elem = document.createElement('div');
+	elem.className = className;
+	return elem;
+}
+function buildSpan(className){
+	var elem = document.createElement('span');
+	elem.className = className;
+	return elem;
 }
 
-function ColumbPoint(anchor, constant, rendering){
-	this.anchor = anchor;
-	this.constant = constant;
-	this.charge = -1;
-	this.forceType = "columb";
-	this.rendering = rendering;
-}
+//Variables used to define the rules of the simulation
 
 
-function State(forces, generators, time){
-	this.forces = forces;
-	this.generators = generators;
-	this.t = time;
-}
 //
 
 function makeScene(){
@@ -99,15 +80,11 @@ function makeScene(){
 	var cube = new THREE.Mesh(cubeGeometry, new THREE.MeshFaceMaterial(cubeMaterials));
 	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
 	egh.material.linewidth = 2;
-//	scene.add( egh );
-	var geometry = new THREE.PlaneGeometry( 14.14, 14.14, 10 );
-	var material = new THREE.MeshBasicMaterial( {color: 0xccffff, side: THREE.DoubleSide} );
-	var plane = new THREE.Mesh( geometry, material );
-	scene.add( plane );
-	plane.position.y = -10;
-		plane.rotateX(Math.PI/2);
-		plane.rotateY(-Math.PI/4);
-
+	scene.add( egh );
+var geometry = new THREE.SphereGeometry( 1, 32, 32 ); var material = new THREE.MeshBasicMaterial( {color: 0x00ffff} ); var sphere = new THREE.Mesh( geometry, material ); scene.add( sphere );	
+	
+	sphere.position.y = -3;
+	sphere.position.x = 8;
 	//scene.add(cube);	
 
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
@@ -248,12 +225,21 @@ function basicProps(){
 function particleSim(props){
 	var gravity = new VectorForce($V([0, props.gv, 0]));
 	var forces = [gravity];
+	var gb = new GravityPoint($V([8, -3, 0]), 9.8, -1);
+	forces.push(gb);
+
+
 	var generators = [];
-	var pg = new ConstantPosition($V([0, 0, 0]));
-	var dg = new DirectionGenSphere();
-	var sg = new SpeedGenN(3, 2);
-	var omniGen = new ParticleGenerator(0, 10, 400, pg, dg, sg, function(){}, {mass: 2, elasticity: .6, life: 2, lcol: 0x00FF00});
-	var nState = new State(forces, [omniGen], 0);
+	var pg = new ConstantPosition($V([5, 0, 0]));
+	var dg = new DirectionGenGeyser($V([1, 1, 0]), .3);
+	var sg = new SpeedGenN(5, 2);
+	var grav = new ParticleGenerator(0, 5, 400, pg, dg, sg, function(){}, {mass: 2, elasticity: .6, life: 2, lcol: 0x00FF00});
+	var pg2 = new ConstantPosition($V([-5, 0, 0]));
+	var dg2 = new DirectionGenGeyser($V([-1, 1, 0]), .3);
+	var sg2 = new SpeedGenN(5, 2);
+	var ngrav = new ParticleGenerator(0, 5, 400, pg2, dg2, sg2, function(){}, {mass: 2, elasticity: .6, life: 2, lcol: 0xFF00FF});
+
+	var nState = new State(forces, [grav, ngrav], 0);
 	return nState;
 
 }
@@ -281,6 +267,8 @@ function mainLoop(){
 
 
 	function render() {
+		
+		GLOBAL_COLLIDABLE = [];
 		renderer.clear();
 
 		renderer.render(scene, camera);
