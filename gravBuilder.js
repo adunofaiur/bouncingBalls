@@ -80,11 +80,6 @@ function makeScene(){
 	var cube = new THREE.Mesh(cubeGeometry, new THREE.MeshFaceMaterial(cubeMaterials));
 	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
 	egh.material.linewidth = 2;
-	scene.add( egh );
-var geometry = new THREE.SphereGeometry( 1, 32, 32 ); var material = new THREE.MeshBasicMaterial( {color: 0x00ffff} ); var sphere = new THREE.Mesh( geometry, material ); scene.add( sphere );	
-	
-	sphere.position.y = -3;
-	sphere.position.x = 8;
 	//scene.add(cube);	
 
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
