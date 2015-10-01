@@ -226,7 +226,6 @@ function particleSim(props){
 	var gravity = new VectorForce($V([0, props.gv, 0]));
 	var forces = [gravity];
 	var gb = new GravityPoint($V([8, -3, 0]), 9.8, -1);
-	forces.push(gb);
 
 
 	var generators = [];
@@ -236,7 +235,7 @@ function particleSim(props){
 	var grav = new ParticleGenerator(0, 5, 400, pg, dg, sg, function(){}, {mass: 2, elasticity: .6, life: 2, lcol: 0x00FF00});
 	var pg2 = new ConstantPosition($V([-5, 0, 0]));
 	var dg2 = new DirectionGenGeyser($V([-1, 1, 0]), .3);
-	var sg2 = new SpeedGenN(5, 2);
+	var sg2 = new SpeedGenN(10, 2);
 	var ngrav = new ParticleGenerator(0, 5, 400, pg2, dg2, sg2, function(){}, {mass: 2, elasticity: .6, life: 2, lcol: 0xFF00FF});
 
 	var nState = new State(forces, [grav, ngrav], 0);
