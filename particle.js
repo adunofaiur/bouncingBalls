@@ -1,11 +1,14 @@
 
-function Particle(position, velocity, acceleration, rendering){
+function Particle(position, velocity, acceleration, rendering, props, time){
 	this.p = position;
 	this.v = velocity;
 	this.a = acceleration;
 	this.priorV = velocity.dup();
 	this.priorA = acceleration.dup();
 	this.rendering = rendering;
+	this.elasticity = props.elasticity;
+	this.mass = props.mass;
+	this.killme = props.life + time;
 }
 
 
@@ -72,20 +75,27 @@ function offset(p, v, time){
 	return newP;
 
 }
-function ParticleGenerator(start, end, generationRate, positionGen, directionGen, speedGen, callback){
+function ParticleGenerator(start, end, generationRate, positionGen, directionGen, speedGen, callback, props){
 	this.s = start;
 	this.end = end;
 	this.r = generationRate;
 	this.pGen = positionGen;
 	this.dGen = directionGen;
 	this.sGen = speedGen;
+	this.rounded = 0;
 	this.callback = callback;
+	this.props = props;
 }
 
 ParticleGenerator.prototype.generate = function(time, timestep){
 	
 	if(time >= this.s && time < this.end){
 		var particleNum = Math.floor((timestep/1000) * this.r);
+		this.rounded += ((timestep/1000)*this.r) - particleNum;
+		if(this.rounded >= 1){
+			particleNum += Math.floor(this.rounded);
+			this.rounded -= Math.floor(this.rounded);
+		}
 		for(var i = 0; i < particleNum; i++){
 			var p = this.pGen.generate(time);
 			var d = this.dGen.generate(time);
@@ -96,7 +106,7 @@ ParticleGenerator.prototype.generate = function(time, timestep){
 
 
 			var rendering = makeSprite(p);
-			var particle = new Particle(p, v, $V([0, 0, 0]), rendering);
+			var particle = new Particle(p, v, $V([0, 0, 0]), rendering, this.props, time);
 			particleList.push(particle);
 		}
 

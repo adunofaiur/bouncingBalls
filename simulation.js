@@ -1,20 +1,22 @@
 //units: 1 px = 1m
 
 
-
 function collideableWalls(){
-	var p1 = $P($V([8, 0, 0]), $V([-1, 0, 0]));
-	
-	var p2 = Plane.create($V([-8, 0, 0]), $V([1, 0, 0]));
+	/*var p1 = $P($V([10, 0, 0]), $V([-1, 0, 0]));
 
-	var p3 = Plane.create($V([0, 8, 0]), $V([0, -1, 0]));
+	var p2 = Plane.create($V([10, 0, 0]), $V([1, 0, 0]));
 
-	var p4 = Plane.create($V([0, -8, 0]), $V([0, 1, 0]));
+	var p3 = Plane.create($V([0, 10, 0]), $V([0, -1, 0]));*/
 
-	var p5 = Plane.create($V([0, 0, 8]), $V([0, 0, -1]));
+	var p4 = Plane.create($V([0, -10, 0]), $V([1, 1, 0]).toUnitVector());
+	p4.verts = [$V([-5, -5, -5]), $V([5, -5, -5]), $V([5,5 ,5]), $V([-5, 5, 5])]
 
-	var p6 = Plane.create($V([0, 0, -8]), $V([0, 0, 1]));
-	var vals =  [p1, p2, p3, p4, p5, p6];
+
+/*
+	var p5 = Plane.create($V([0, 0, 10]), $V([0, 0, -1]));
+
+	var p6 = Plane.create($V([0, 0, 10]), $V([0, 0, 1]));*/
+	var vals =  [p4];
 	for (v in vals){
 		vals[v].col_type = 'plane';
 	}
@@ -22,6 +24,7 @@ function collideableWalls(){
 
 }
 
+var GLOBAL_COLLIDABLES = collideableWalls();
 
 
 
@@ -44,8 +47,8 @@ function accelerate(particle, forces){
 		}*/
 	}
 	//air res, hardcoded
-	//var airOverG = AIR_RESISTANCE / moveable.mass;
-	//particle.a = particle.a.subtract(particle.a.multiply(airOverG));
+	var airOverG = AIR_RESISTANCE / particle.mass;
+	particle.a = particle.a.subtract(particle.a.multiply(airOverG));
 
 }
 function velocerate(particle, ts){
@@ -55,13 +58,21 @@ function velocerate(particle, ts){
 
 }
 
-function reposition(particle, ts){
+function reposition(particle, ts, collision){
 	
-	var finalMove = particle.priorV.add(particle.v);
-	finalMove = finalMove.multiply(.5);
-	finalMove = finalMove.multiply(ts/1000);
+	if(!collision){
+		var finalMove = particle.priorV.add(particle.v);
+		finalMove = finalMove.multiply(.5);
+		finalMove = finalMove.multiply(ts/1000);
 
-	particle.p = particle.p.add(finalMove);
+		particle.p = particle.p.add(finalMove);
+	}else{
+		var finalMove = particle.v.multiply(ts/1000);
+
+		particle.p = particle.p.add(finalMove);
+
+	}
+	
 }
 
 
@@ -72,7 +83,9 @@ function sameSign(a, b){
 	else{
 		return false;
 	}
-}/*
+}
+
+
 function didCollide(collidable, collidableType, pos1, pos2){
 
 	if(collidableType == 'plane'){
@@ -80,42 +93,34 @@ function didCollide(collidable, collidableType, pos1, pos2){
 		var dist1 = pointInPlane1.dot(collidable.normal);
 		var pointInPlane2 = pos2.subtract(collidable.anchor);
 		var dist2 = pointInPlane2.dot(collidable.normal);
+		
 		if(sameSign(dist1, dist2)){
+			if(pos2.e(2) < -10 && pos1.e(2) >= -10 && collidable.anchor.e(2) == -10){
+				console.log('p1: ' + pos1.e(2) + " p2: " + pos2.e(2) );
+			}
+
 			return {time: -1};
 		}
 		else{
 			var fract = dist1 / (dist1 - dist2);
 
-			return {time: fract, normal: collidable.normal}
+			return {time: fract, normal: collidable.normal, collidable: collidable}
 		}
 
 	}
-	else if (collidableType == 'ball'){
-		var dist1 = magnitude(collidable.position.subtract(pos1));
-		var dist2 = magnitude(collidable.position.subtract(pos2));
-		if(dist2 < 4){
-			var fract = (dist1-4)/ (dist1-4 - dist2-4)
-			var n = pos1.subtract(collidable.position).multiply(1);
-			return {time: fract, normal: n.toUnitVector(), ctype: 'ball'}
-		}else{
-			return {time: -1}
-		}
-	}
-	else{
-		return {time: -1};
-	}
+
 }
-function detectCollision(moveable, oldmoveable, collidables){
+function detectCollision(particle, priorP){
 	var responses = [];
-	for(var i = 0; i < collidables.length; i++){
-		if((collidables[i].rendering && collidables[i].rendering != moveable.rendering) || !collidables[i].rendering){
-			var fract = didCollide(collidables[i], collidables[i].col_type, moveable.position, oldmoveable.position);
+	for(var i = 0; i < GLOBAL_COLLIDABLES.length; i++){
 		
-			if (fract.time > -1){
-				responses.push(fract);
-			}	
+		var fract = didCollide(GLOBAL_COLLIDABLES[i], GLOBAL_COLLIDABLES[i].col_type, particle.p, priorP);
+	
+		if (fract.time > -1){
+			responses.push(fract);
+		}	
 
-		}
+		
 	}
 	if(responses.length > 0){
 		return responses;
@@ -136,23 +141,24 @@ function magnitude(sylvVect){
 	return mag;
 }
 
-function collisionVelocerate(moveable, planeNormal){
+function collisionVelocerate(particle, planeNormal){
 	
-	var ELASTIC_COEFFICIENT = moveable.elasticity;
+	var ELASTIC_COEFFICIENT = particle.elasticity;
 
-	var normalVel = moveable.velocity.dot(planeNormal);
+	var normalVel = particle.v.dot(planeNormal);
 	normalVel = planeNormal.multiply(normalVel);
 	
-	var tangVel = moveable.velocity.subtract(normalVel);
+	var tangVel = particle.v.subtract(normalVel);
 	var elasticResp = normalVel.multiply(-ELASTIC_COEFFICIENT);
 	var frictResp = tangVel.multiply(1-FRICTION_COEFFICIENT);
 
 	var finalVel = elasticResp.add(frictResp);
-	moveable.velocity = finalVel;
+	particle.v = finalVel;
 
-}*/
-function isResting(sPrime){
-	if(magnitude(sPrime.velocity) < .4 && sPrime.position.e(2) < -7.95){
+}
+
+function isResting(particle){
+	if(magnitude(particle.v) < .4 && particle.p.e(2) < -9.95){
 		console.log('stahp')
 		return true;
 	}
@@ -160,37 +166,131 @@ function isResting(sPrime){
 	return false;
 
 }
+
+function didItReallyCollide(xHit, edges){
+
+	var pXHit = $V([xHit.e(1), xHit.e(3)]);
+	var pEdges = [];
+	for(var i = 0; i< edges.length; i++){
+		pEdges.push($V([edges[i].e(1), edges[i].e(3)]));
+	}
+	var pMatDets = [];
+	for(var i =0; i< pEdges.length; i++){
+		var edge;
+		if(i == (pEdges.length-1)){
+			edge = pEdges[0].subtract(pEdges[i]);
+
+		}else{
+			edge = pEdges[i+1].subtract(pEdges[i]);
+
+		}
+		var e2 = pXHit.subtract(pEdges[i]);
+		var m = $M([edge.elements, e2.elements]);
+		var d = m.det();
+		if(d < 0){
+			pMatDets.push('+');
+		}else{
+			pMatDets.push('-');
+		}
+
+	}
+
+	var sign = pMatDets[0];	
+	for(var i = 0; i < pMatDets.length; i++){
+		if(sign != pMatDets[i]){
+			return false;
+		}
+	}
+	return true;
+
+}
 function eulerStep(state){
 	
 
+	for (var i = 0; i < state.generators.length; i++){
+		state.generators[i].generate(state.t, timeStep);
+	}
 
-	var t = 0;
-	var timeStepRemaining =  timeStep - t;
-	var ts = timeStep;
+	
 
-	while(timeStepRemaining > 0){
-
-
-		for (var i = 0; i < state.generators.length; i++){
-			state.generators[i].generate(state.t, ts);
-		}
-		for(var i = 0; i < particleList.length; i++){
+	for(var i = 0; i < particleList.length; i++){
+	
+		var t = 0;
+		var timeStepRemaining =  timeStep - t;
+		var ts = timeStep;
 			var particle = particleList[i];
+
+		while(timeStepRemaining > 0 && !particle.resting){
+
+			var priorP = particle.p.dup();
+
 			accelerate(particle, state.forces);
 			velocerate(particle, ts);
 			reposition(particle, ts);
 			particle.priorA = particle.a;
 			particle.priorV = particle.v;
+			var collisionDetails = detectCollision(particle, priorP);
 
+			if(collisionDetails.length == 1){
+					ts = collisionDetails[0].time * timeStep;
+					//single response
+					var detail = collisionDetails[0];
+					var xHit = particle.priorV.multiply(detail.time*(timeStep/1000)).add(priorP);
+
+					//extra collision stuff
+					if(didItReallyCollide(xHit, detail.collidable.verts)){
+						particle.a = particle.priorA;
+						particle.v = particle.priorV;
+						particle.p = priorP;
+						accelerate(particle, state.forces);
+						velocerate(particle, ts);
+						collisionVelocerate(particle, detail.normal);
+						reposition(particle, ts, true);
+
+						particle.priorA = particle.a;
+						particle.priorV = particle.v;
+
+
+						timeStepRemaining = timeStepRemaining - ts
+						if(timeStepRemaining < .1){
+							timeStepRemaining = 0;
+						}
+					}
+					
+				
+				
+				
+
+			}else if(collisionDetails.length > 1){
+				//I'm cheating very grossly for this case. move in the direction of th
+				var newNormal = $V([0, 0, 0]);
+				for(var k = 0; k < collisionDetails.length; k++){
+					newNormal = newNormal.add(collisionDetails[k].normal);
+				}
+				newNormal = newNormal.toUnitVector();
+
+
+				points.geometry.colors[particle.rendering] = new THREE.Color(0xFF0000);
+
+			}
+			else{
+				timeStepRemaining = 0;
+			}
+			
+			if(isResting(particle)){
+				particle.v = $V([0, 0, 0]);
+				particle.a = $V([0, 0, 0]);
+				particle.resting = true;
+				timeStepRemaining = 0;
+			}
 
 		}
-		
-		
-		timeStepRemaining = 0;
-		state.t += (timeStep/1000);
+
+	
 	}
 
 	
+			state.t += (timeStep/1000);
 
 
 				
