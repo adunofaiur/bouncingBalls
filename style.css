@@ -32,6 +32,10 @@
 	display: inline-flex;
 	flex-size: 700;
 	height: 700px;
+	border-style: solid;
+	border-color: black;
+	border-width: 1px;
+	
 }
 .sublabel{
 	color: lightgray;

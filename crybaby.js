@@ -14,6 +14,39 @@ var particleList = [];
 var pointList;
 var pli = 0;
 var simState;
+//units: 1 px = 1m
+
+
+function collideableWalls(){
+	/*var p1 = $P($V([10, 0, 0]), $V([-1, 0, 0]));
+
+	var p2 = Plane.create($V([10, 0, 0]), $V([1, 0, 0]));
+
+	var p3 = Plane.create($V([0, 10, 0]), $V([0, -1, 0]));*/
+
+	var p4 = Plane.create($V([0, 0, 0]), $V([1, 1, 0]).toUnitVector());
+	p4.verts = [$V([-5, -5, -5]), $V([5, -5, -5]), $V([5,5 ,5]), $V([-5, 5, 5])];
+
+
+
+	var p1 = Plane.create($V([10, -10, 0]), $V([0, 1, 0]).toUnitVector());
+	p1.verts = [$V([5, -10, -5]), $V([15, -10, -5]), $V([15, -10,5]), $V([5, -10, 5])];
+
+
+/*
+	var p5 = Plane.create($V([0, 0, 10]), $V([0, 0, -1]));
+
+	var p6 = Plane.create($V([0, 0, 10]), $V([0, 0, 1]));*/
+	var vals =  [p1, p4];
+	for (v in vals){
+		vals[v].col_type = 'plane';
+	}
+	return vals;
+
+}
+
+var GLOBAL_COLLIDABLES = collideableWalls();
+
 
 function buildDiv(className){
 	var elem = document.createElement('div');
@@ -27,55 +60,8 @@ function buildSpan(className){
 }
 
 //Variables used to define the rules of the simulation
-//units: 1 px = 1m
 
 
-function collideableWalls(){
-	/*var p1 = $P($V([10, 0, 0]), $V([-1, 0, 0]));
-
-	var p2 = Plane.create($V([10, 0, 0]), $V([1, 0, 0]));
-
-	var p3 = Plane.create($V([0, 10, 0]), $V([0, -1, 0]));*/
-
-	var p4 = Plane.create($V([0, -10, 0]), $V([1, 1, 0]).toUnitVector());
-	p4.verts = [$V([-5, -5, -5]), $V([5, -5, -5]), $V([5,5 ,5]), $V([-5, 5, 5])]
-
-
-/*
-	var p5 = Plane.create($V([0, 0, 10]), $V([0, 0, -1]));
-
-	var p6 = Plane.create($V([0, 0, 10]), $V([0, 0, 1]));*/
-	var vals =  [p4];
-	for (v in vals){
-		vals[v].col_type = 'plane';
-	}
-	return vals;
-
-}
-
-var GLOBAL_COLLIDABLES = collideableWalls();
-
-
-
-function VectorForce(vector){
-	this.force = vector;
-	this.forceType = "vector";
-}
-
-function ColumbPoint(anchor, constant, rendering){
-	this.anchor = anchor;
-	this.constant = constant;
-	this.charge = -1;
-	this.forceType = "columb";
-	this.rendering = rendering;
-}
-
-
-function State(forces, generators, time){
-	this.forces = forces;
-	this.generators = generators;
-	this.t = time;
-}
 //
 
 function makeScene(){
@@ -100,14 +86,9 @@ function makeScene(){
 	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
 	egh.material.linewidth = 2;
 //	scene.add( egh );
-	var geometry = new THREE.PlaneGeometry( 14.14, 14.14, 10 );
-	var material = new THREE.MeshBasicMaterial( {color: 0xccffff, side: THREE.DoubleSide} );
-	var plane = new THREE.Mesh( geometry, material );
-	scene.add( plane );
-	plane.position.y = -10;
-		plane.rotateX(Math.PI/2);
-		plane.rotateY(-Math.PI/4);
-
+	var geometry = new THREE.SphereGeometry( 2, 32, 32 ); var material = new THREE.MeshBasicMaterial( {color: 0xFF00FF} ); var sphere = new THREE.Mesh( geometry, material ); scene.add( sphere );	
+	sphere.position.y = 15;
+	sphere.position.x = -15;
 	//scene.add(cube);	
 
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
@@ -117,6 +98,27 @@ function makeScene(){
 
 	camera.position.z = 50;
 	scene.add(camera);
+
+
+	var geometry = new THREE.PlaneGeometry( 14.14, 14.14, 10 );
+	var material = new THREE.MeshBasicMaterial( {color: 0xccffff, side: THREE.DoubleSide} );
+	var plane = new THREE.Mesh( geometry, material );
+	scene.add( plane );
+	plane.position.y = 0;
+		plane.position.x = 0;
+
+	plane.rotateX(Math.PI/2);
+	plane.rotateY(-Math.PI/4);
+
+
+	var plane = new THREE.Mesh( geometry, material );
+	scene.add( plane );
+	plane.position.y = -10;
+		plane.position.x = 10;
+
+	plane.rotateX(Math.PI/2);
+	//plane.rotateY(-Math.PI/4);
+
 
  	pGeo = new THREE.Geometry();
     var sprite = THREE.ImageUtils.generateDataTexture(16, 16, 0x00FF00);
@@ -146,7 +148,7 @@ function makeScene(){
 	camera.lookAt(cube.position);
 	var  controls = new THREE.OrbitControls(camera, renderer.domElement)
 	var skyboxGeometry = new THREE.CubeGeometry(10000, 10000, 10000);
-	var skyboxMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.BackSide });
+	var skyboxMaterial = new THREE.MeshBasicMaterial({ color: 0x00BBFF, side: THREE.BackSide });
 	var skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
 	 
 	scene.add(skybox);
@@ -210,6 +212,10 @@ function resetSim(aState){
 	points.geometry.verticesNeedUpdate = true;
 	points.geometry.colorsNeedUpdate = true;
 
+	var gb = new GravityPoint($V([-15, 15, 0]), -5000, 2);
+	var gravity = new VectorForce($V([0, -9.8, 0]));
+
+	newState.forces = [gravity, gb];
 
 
 	return newState;
@@ -244,16 +250,69 @@ function basicProps(){
 
 }
 
-
+	var gb2; 
 function particleSim(props){
 	var gravity = new VectorForce($V([0, props.gv, 0]));
 	var forces = [gravity];
+	var gb = new GravityPoint($V([-15, 15, 0]), -5000, 2);
+	gb2 = new GravityPoint($V([-15, 15, 0]), 10, -1);
+
+	forces.push(gb);
+
+
 	var generators = [];
-	var pg = new ConstantPosition($V([0, 0, 0]));
+	/*var pg = new ConstantPosition($V([5, 0, 0]));
+	var dg = new DirectionGenGeyser($V([1, 1, 0]), .3);
+	var sg = new SpeedGenN(5, 2);
+	var grav = new ParticleGenerator(0, 5, 400, pg, dg, sg, function(){}, {mass: 2, elasticity: .6, life: 3, lcol: 0x00FF00});
+	var pg2 = new ConstantPosition($V([-5, 0, 0]));
+	var dg2 = new DirectionGenGeyser($V([-1, 1, 0]), .3);
+	var sg2 = new SpeedGenN(5, 2);
+	var ngrav = new ParticleGenerator(0, 5, 400, pg2, dg2, sg2, function(){}, {mass: 2, elasticity: .6, life: 3, lcol: 0xFF00FF});
+*/
+	var pg = new ConstantPosition($V([12, 0, 0]));
+	var dg = new DirectionGenGeyser($V([-1, .5, 0]), .2);
+	var sg = new SpeedGenN(20, 2);
+	var squirt = new ParticleGenerator(0, 5, 400, pg, dg, sg, function(that, time){
+		simState.forces = [gravity, gb2]
+
+	}, {mass: 2, elasticity: .6, life: 6, lcol: 0xffa500});
+	
+
+	var pg = new ConstantPosition($V([10, 0, 0]));
 	var dg = new DirectionGenSphere();
-	var sg = new SpeedGenN(3, 2);
-	var omniGen = new ParticleGenerator(0, 10, 400, pg, dg, sg, function(){}, {mass: 2, elasticity: .6, life: 2, lcol: 0x00FF00});
-	var nState = new State(forces, [omniGen], 0);
+	var sg = new SpeedGenN(1, 1);
+	var poof = new ParticleGenerator(0, 5, 400, pg, dg, sg, function(that, time){
+		//simState.forces = [gravity, gb2]
+
+
+	}, {mass: 2, elasticity: .6, life: 6, lcol: 0x00FF00});
+	
+
+
+
+
+
+
+
+
+
+
+	/*var pg2 = new ConstantPosition($V([-10, 10, 0]));
+
+	var omniGen2 = new ParticleGenerator(0, 1, 400, pg2, dg, sg, function(that, time){
+
+
+	}, {mass: 2, elasticity: .6, life: 5, lcol: 0x938366});
+
+
+	var squirtgun = new ParticleGenerator(0, 1, 400, pg2, dg, sg, function(that, time){
+
+
+	}, {mass: 2, elasticity: .6, life: 5, lcol: 0x938366});*/
+
+
+	var nState = new State(forces, [squirt, poof], 0);
 	return nState;
 
 }
@@ -281,6 +340,8 @@ function mainLoop(){
 
 
 	function render() {
+		
+		GLOBAL_COLLIDABLE = [];
 		renderer.clear();
 
 		renderer.render(scene, camera);
