@@ -59,8 +59,9 @@ function makeScene(){
 	renderer.setSize(width, height);
 	 $('.renderingHolder').append(renderer.domElement);
 	scene = new THREE.Scene;
-var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
-	var cubeMaterials =[ new THREE.MeshLambertMaterial({ transparent: true ,color: 0x99CCFF, opacity: .0 }),
+	
+	var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
+	var cubeMaterials =[ new THREE.MeshLambertMaterial({ transparent: true ,color: 0x00ffff, opacity: .0 }),
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFFCCFF, opacity: .0}),
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xCCFFCC, opacity: .0 }),
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFFCCCC, opacity: .0 }),
@@ -68,7 +69,21 @@ var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFF99CC, opacity: .0 })
 
 	];
-	cube = new THREE.Mesh(cubeGeometry, new THREE.MeshFaceMaterial(cubeMaterials));
+	
+	var cube = new THREE.Mesh(cubeGeometry, new THREE.MeshFaceMaterial(cubeMaterials));
+	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
+	egh.material.linewidth = 2;
+//	scene.add( egh );
+	var geometry = new THREE.PlaneGeometry( 14.14, 14.14, 10 );
+	var material = new THREE.MeshBasicMaterial( {color: 0xccffff, side: THREE.DoubleSide} );
+	var plane = new THREE.Mesh( geometry, material );
+	scene.add( plane );
+	plane.position.y = -10;
+		plane.rotateX(Math.PI/2);
+		plane.rotateY(-Math.PI/4);
+
+	//scene.add(cube);	
+
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
 
 	camera.position.y = 20;
@@ -76,9 +91,10 @@ var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
 
 	camera.position.z = 50;
 	scene.add(camera);
+
  	pGeo = new THREE.Geometry();
     var sprite = THREE.ImageUtils.generateDataTexture(16, 16, 0x00FF00);
-	for ( i = 0; i < 2501; i ++ ) {
+	for ( i = 0; i < 300; i ++ ) {
 
 		var vertex = new THREE.Vector3();
 		vertex.x = 0;
@@ -205,7 +221,7 @@ function particleSim(props){
 	var pg = new ConstantPosition($V([0, 0, 0]));
 	var dg = new DirectionGenSphere();
 	var sg = new SpeedGenN(3, 2);
-	var omniGen = new ParticleGenerator(0, 5, 500, pg, dg, sg, function(){});
+	var omniGen = new ParticleGenerator(0, 5, 50, pg, dg, sg, function(){}, {mass: 2, elasticity: .6, life: 8});
 	var nState = new State(forces, [omniGen], 0);
 	return nState;
 
@@ -223,7 +239,7 @@ function mainLoop(){
 	var props = getSimProperities();
     simState = particleSim(props);
 	
-    timeStep = 32;
+    timeStep = 10;
 
 
 
@@ -266,10 +282,14 @@ function mainLoop(){
 			rend.x = p.p.e(1);
 			rend.y = p.p.e(2);
 			rend.z = p.p.e(3);
-
-			if(p.p.e(2) < -3){
+/*
+			if(p.p.e(2) < -10){
 				points.geometry.colors[p.rendering] = new THREE.Color(0xFF0000);
 			}
+			if(p.p.e(2) < -5){
+				points.geometry.colors[p.rendering] = new THREE.Color(0xFF0000);
+			}*/
+
 		}
 		points.geometry.verticesNeedUpdate = true;
 		points.geometry.colorsNeedUpdate = true;
