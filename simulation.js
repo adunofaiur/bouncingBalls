@@ -1,31 +1,33 @@
-//units: 1 px = 1m
 
 
-function collideableWalls(){
-	/*var p1 = $P($V([10, 0, 0]), $V([-1, 0, 0]));
-
-	var p2 = Plane.create($V([10, 0, 0]), $V([1, 0, 0]));
-
-	var p3 = Plane.create($V([0, 10, 0]), $V([0, -1, 0]));*/
-
-	var p4 = Plane.create($V([0, -10, 0]), $V([1, 1, 0]).toUnitVector());
-	p4.verts = [$V([-5, -5, -5]), $V([5, -5, -5]), $V([5,5 ,5]), $V([-5, 5, 5])]
 
 
-/*
-	var p5 = Plane.create($V([0, 0, 10]), $V([0, 0, -1]));
-
-	var p6 = Plane.create($V([0, 0, 10]), $V([0, 0, 1]));*/
-	var vals =  [p4];
-	for (v in vals){
-		vals[v].col_type = 'plane';
-	}
-	return vals;
-
+function VectorForce(vector){
+	this.force = vector;
+	this.forceType = "vector";
 }
 
-var GLOBAL_COLLIDABLES = collideableWalls();
+function ColumbPoint(anchor, constant, rendering){
+	this.anchor = anchor;
+	this.constant = constant;
+	this.charge = -1;
+	this.forceType = "columb";
+	this.rendering = rendering;
+}
 
+
+function State(forces, generators, time){
+	this.forces = forces;
+	this.generators = generators;
+	this.t = time;
+}
+function GravityPoint(p, g, r, rendering){
+	this.p = p;
+	this.g = g;
+	this.r = r;
+	this.rendering = rendering;
+	this.forceType = 'gravp';
+}
 
 
 function accelerate(particle, forces){
@@ -36,7 +38,16 @@ function accelerate(particle, forces){
 		var force = forces[i];
 		if(force.forceType == 'vector'){
 			particle.a = particle.a.add(force.force);
-		}/*else if(force.forceType == "columb"){
+		}else if(force.forceType == 'gravp'){
+			var xaihat = particle.p.subtract(force.p);
+			var rai = magnitude(xaihat);
+			xaihat = xaihat.multiply(1/rai);
+			var scalars = -force.g / (Math.pow(rai, force.r));
+			particle.a = particle.a.add(xaihat.multiply(scalars));
+		}
+
+
+		/*else if(force.forceType == "columb"){
 			var cNormal = moveable.position.subtract(force.anchor).toUnitVector();
 			var dist = magnitude(moveable.position.subtract(force.anchor)) - 2;
 			if((dist*dist < .0001)){
@@ -218,8 +229,13 @@ function eulerStep(state){
 		var t = 0;
 		var timeStepRemaining =  timeStep - t;
 		var ts = timeStep;
-			var particle = particleList[i];
-
+		var particle = particleList[i];
+		if(particle.killme <= state.t){
+			particle.resting = true;
+			particle.p.elements[0] = -12000;
+			particle.v = $V([0, 0, 0]);
+			particle.a = $V([0, 0, 0]);
+		}
 		while(timeStepRemaining > 0 && !particle.resting){
 
 			var priorP = particle.p.dup();
@@ -249,6 +265,7 @@ function eulerStep(state){
 
 						particle.priorA = particle.a;
 						particle.priorV = particle.v;
+						points.geometry.colors[particle.rendering] = new THREE.Color(particle.colColor);
 
 
 						timeStepRemaining = timeStepRemaining - ts
