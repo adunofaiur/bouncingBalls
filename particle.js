@@ -1,21 +1,166 @@
+var NUMBER_OF_AGENTS = 100;
+var PROPERTIES_PER_AGENT = 8;
+var TIE_FIGHTER = 0;
+var A_WING = 1;
+var STAR_DESTROYER = 2;
+var LASER = 3;
+var ARRAY_SIZE = NUMBER_OF_AGENTS * PROPERTIES_PER_AGENT;
+var stateArray = new Array(ARRAY_SIZE);
+var dynamicsArray =  new Array((NUMBER_OF_AGENTS * 6));
+var fighterArray = new Array();
+var forceArray = new Array();
 
-function Particle(position, velocity, acceleration, rendering, props, time){
-	this.p = position;
-	this.v = velocity;
-	this.a = acceleration;
-	this.priorV = velocity.dup();
-	this.priorA = acceleration.dup();
-	this.rendering = rendering;
-	this.elasticity = props.elasticity;
-	this.mass = props.mass;
-	this.killme = props.life + time;
-	this.lcol = props.lcol;
 
-	this.colColor = props.cocl;
+
+
+function force(objectindex, t, objectName){
+	var k = 1;
+	var actualIndex = objectindex / PROPERTIES_PER_AGENT;
+	var acceleration = $V([0, 0, 0]);
+	for(var j = 0; j < NUMBER_OF_AGENTS; j++){
+
+		if(j != actualIndex){
+			var xij = $V([ (-stateArray[objectindex] + stateArray[j*PROPERTIES_PER_AGENT]),
+						   (-stateArray[objectindex+1] + stateArray[j*PROPERTIES_PER_AGENT+1]),
+						   (-stateArray[objectindex+2] + stateArray[j*PROPERTIES_PER_AGENT+2])
+				]);
+			var distance = magnitude(xij);
+			var direction = xij.toUnitVector();
+			var avoidance = direction.multiply((-0/distance));
+			var matching = $V([
+				(-stateArray[objectindex+3] + stateArray[j*PROPERTIES_PER_AGENT+3]),
+				(-stateArray[objectindex+4] + stateArray[j*PROPERTIES_PER_AGENT+4]),
+				(-stateArray[objectindex+5] + stateArray[j*PROPERTIES_PER_AGENT+5])
+				]);
+			matching = matching.multiply(0);
+			var centering = xij.multiply(0);
+			acceleration = acceleration.add(avoidance);
+			acceleration = acceleration.add(matching);
+			acceleration = acceleration.add(centering);
+		}
+	}
+	return acceleration;
+
 }
 
 
-function makeSprite(p, lcol){
+function numericallyIntegrate(h){
+	var sNew = new Array(ARRAY_SIZE);
+	for (var i = 0; i < NUMBER_OF_AGENTS; i++){
+		var objectindex = i*PROPERTIES_PER_AGENT;
+		var dynamicsIndex = i*6;
+
+		sNew[objectindex] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex] * (h/1000));
+		sNew[objectindex+1] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+1] * (h/1000));
+		sNew[objectindex+2] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+2] * (h/1000));
+
+		sNew[objectindex+3] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+3] * (h/1000));
+		sNew[objectindex+4] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+4] * (h/1000));
+		sNew[objectindex+5] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+5] * (h/1000));
+		sNew[objectindex+6] = stateArray[objectindex+6];
+		sNew[objectindex+7] = stateArray[objectindex+7];
+
+	}
+	return sNew;
+}
+
+function calculateStateDynamics(t){
+	
+	for (i = 0; i < NUMBER_OF_AGENTS; i++){
+		var objectindex = i*PROPERTIES_PER_AGENT;
+		var dynamicsIndex = i*6;
+		dynamicsArray[dynamicsIndex] = stateArray[objectindex+3];
+		dynamicsArray[dynamicsIndex+1] = stateArray[objectindex+4];
+		dynamicsArray[dynamicsIndex+2] = stateArray[objectindex+5];
+
+		var acceleration = force(i, t, stateArray[objectindex+7]).multiply(1/stateArray[objectindex+6]);
+		dynamicsArray[dynamicsIndex+3] = acceleration.e(1);
+		dynamicsArray[dynamicsIndex+4] = acceleration.e(2);
+		dynamicsArray[dynamicsIndex+5] = acceleration.e(3);
+
+	}
+}
+
+
+
+
+function Particle(position, velocity, rendering, mass, name){
+	this.p = position;
+	this.v = velocity;
+	this.rendering = rendering;
+	this.mass = mass;
+	this.pName = name;
+}
+
+Particle.prototype.copyToStateArray = function(initIndex, vector){
+	vector[initIndex] = this.p.e(1);
+	vector[initIndex+1] = this.p.e(2);
+	vector[initIndex+2] = this.p.e(3);
+
+	vector[initIndex+3] = this.v.e(1);
+	vector[initIndex+4] = this.v.e(2);
+	vector[initIndex+5] = this.v.e(3);
+	vector[initIndex+6] = this.mass;
+	vector[initIndex+7] = this.pName;
+}
+Particle.prototype.copyFromStateArray = function(initIndex, vector){
+	this.p.elements[0] = vector[initIndex];
+	this.p.elements[1] = vector[initIndex+1];
+	this.p.elements[2] = vector[initIndex+2];
+
+	this.v.elements[0] = vector[initIndex+3];
+	this.v.elements[1] = vector[initIndex+4];
+	this.v.elements[2] = vector[initIndex+5];
+
+
+	this.mass = vector[initIndex+6];
+	this.pName = vector[initIndex+7];
+}
+
+
+
+function initializeTieFighters(){
+	
+	var forces = [];
+	var generators = [];
+	var pg = new ConstantPosition($V([0, 0, 0]));
+	var dg = new DirectionGenGeyser($V([-1, .5, 0]), .2);
+	var sg = new SpeedGenN(0, .01);
+	var gen = new FlockGenerator(pg, dg, sg, NUMBER_OF_AGENTS);
+	var fighters = gen.generate(10000, 0);
+	for (var i = 0; i < fighters.length; i++){
+		fighterArray.push(fighters[i]);
+	}
+}
+function FlockGenerator(positionGen, directionGen, velocityGen, count){
+	this.pg = positionGen;
+	this.dg = directionGen;
+	this.vg = velocityGen;
+	this.count = count;
+	this.t = 0;
+}
+FlockGenerator.prototype.generate = function(mass, type){
+	var plist = [];	
+		for(var i = 0; i < this.count; i++){
+			var p = this.pg.generate(this.t);
+			var d = this.dg.generate(this.t);
+			var s = this.vg.generate(this.t);
+			var v = d.multiply(s);
+			p = offset(p, v, this.t);
+
+
+
+			var rendering = makeSprite(p);
+			var particle = new Particle(p, v, rendering, mass, type);
+			plist.push(particle);
+		}
+	return plist;
+}
+
+
+
+
+function makeSprite(p){
 	var j = pointsIndex;
 	if(pointsIndex >= MAX_PARTS){
 		pointsIndex = 0;
@@ -23,13 +168,10 @@ function makeSprite(p, lcol){
 	}
 	pointsIndex++;
 	points.geometry.vertices[j].x = p.e(1); 
-		points.geometry.vertices[j].y = p.e(2); 
+	points.geometry.vertices[j].y = p.e(2); 
 
 	points.geometry.vertices[j].z = p.e(3); 
-	points.geometry.colors[j] = new THREE.Color(lcol)
 	return j;
-
-
 }
 
 function UniformDist(min, max){
@@ -107,6 +249,16 @@ DirectionGenGeyser.prototype.generate = function(){
 	var v = m.multiply(vPrime);
 	return v;
 }
+
+
+
+
+
+
+
+
+
+
 function ParticleGenerator(start, end, generationRate, positionGen, directionGen, speedGen, callback, props){
 	this.s = start;
 	this.end = end;
