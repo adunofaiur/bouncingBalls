@@ -1,19 +1,19 @@
 var renderer, cube, sphere, scene, camere, points, colors = [], pMaterial, pGeo;
 
-var timeStep = 10;
+var timeStep = 100;
 var isplaying =  false;
 var FRICTION_COEFFICIENT = .1;
 var AIR_RESISTANCE = .1;
 var pSize = [];
 var pOpacity = [];
 pointsIndex = 0;
-var MAX_PARTS = 4000;
+var nyeah = 0;
+var MAX_PARTS = 500;
 var tempForceHolder = [];
-
+var stateTime = 0;
 var particleList = [];
 var pointList;
 var pli = 0;
-var simState;
 
 function buildDiv(className){
 	var elem = document.createElement('div');
@@ -26,34 +26,7 @@ function buildSpan(className){
 	return elem;
 }
 
-//Variables used to define the rules of the simulation
-//units: 1 px = 1m
 
-
-function collideableWalls(){
-	/*var p1 = $P($V([10, 0, 0]), $V([-1, 0, 0]));
-
-	var p2 = Plane.create($V([10, 0, 0]), $V([1, 0, 0]));
-
-	var p3 = Plane.create($V([0, 10, 0]), $V([0, -1, 0]));*/
-
-	var p4 = Plane.create($V([0, -10, 0]), $V([1, 1, 0]).toUnitVector());
-	p4.verts = [$V([-5, -5, -5]), $V([5, -5, -5]), $V([5,5 ,5]), $V([-5, 5, 5])]
-
-
-/*
-	var p5 = Plane.create($V([0, 0, 10]), $V([0, 0, -1]));
-
-	var p6 = Plane.create($V([0, 0, 10]), $V([0, 0, 1]));*/
-	var vals =  [p4];
-	for (v in vals){
-		vals[v].col_type = 'plane';
-	}
-	return vals;
-
-}
-
-var GLOBAL_COLLIDABLES = collideableWalls();
 
 
 
@@ -71,12 +44,6 @@ function ColumbPoint(anchor, constant, rendering){
 }
 
 
-function State(forces, generators, time){
-	this.forces = forces;
-	this.generators = generators;
-	this.t = time;
-}
-//
 
 function makeScene(){
 	var width = 700;
@@ -97,25 +64,14 @@ function makeScene(){
 	];
 	
 	var cube = new THREE.Mesh(cubeGeometry, new THREE.MeshFaceMaterial(cubeMaterials));
-	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
-	egh.material.linewidth = 2;
-//	scene.add( egh );
-	var geometry = new THREE.PlaneGeometry( 14.14, 14.14, 10 );
-	var material = new THREE.MeshBasicMaterial( {color: 0xccffff, side: THREE.DoubleSide} );
-	var plane = new THREE.Mesh( geometry, material );
-	scene.add( plane );
-	plane.position.y = -10;
-		plane.rotateX(Math.PI/2);
-		plane.rotateY(-Math.PI/4);
 
-	//scene.add(cube);	
 
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
 
 	camera.position.y = 20;
 	camera.position.x = 20;
 
-	camera.position.z = 50;
+	camera.position.z = 500;
 	scene.add(camera);
 
  	pGeo = new THREE.Geometry();
@@ -129,7 +85,7 @@ function makeScene(){
 
 		pGeo.vertices.push( vertex );
 
-		colors[ i ] = new THREE.Color( 0x00ff00 );
+		colors[ i ] = new THREE.Color( 0x000000 );
 
 	}
 	pGeo.colors = colors;
@@ -182,92 +138,18 @@ function makeScene(){
 
 
 function resetSim(aState){
-	//var simulationProperties = getSimProperities();
-	//timeStep = simulationProperties.ts;
-	var newState = aState;
-	newState.t = 0;
-
-	for (var i = 0; i < particleList.length; i++){
-			var p = particleList[i];
-			
-			var rend = points.geometry.vertices[p.rendering];
-			points.geometry.colors[p.rendering] = new THREE.Color(0x00FF00);
-
-			rend.x = -10000;
-			rend.y = 0;
-			rend.z = 0;
-
-/*
-			if(p.p.e(2) < -10){
-				points.geometry.colors[p.rendering] = new THREE.Color(0xFF0000);
-			}
-			if(p.p.e(2) < -5){
-				points.geometry.colors[p.rendering] = new THREE.Color(0xFF0000);
-			}*/
-
-	}
-	particleList = [];
-	points.geometry.verticesNeedUpdate = true;
-	points.geometry.colorsNeedUpdate = true;
-
-
-
-	return newState;
 
 }
 
-function basicProps(){
-	//for now just global stuff and ball one
-
-	//ball one
-	/*var initVX = parseFloat($('#initx').val());
-	var initVY = parseFloat($('#inity').val());
-	var initVZ = parseFloat($('#initz').val());
-	var velocity = $V([initVX, initVY, initVZ]);
-
-	var initPX = parseFloat($('#initxx').val());
-	var initPY = parseFloat($('#inityy').val());
-	var initPZ = parseFloat($('#initzz').val());
-	var position = $V([initPX, initPY, initPZ]);
-
-	var ts = parseFloat($('#ts').val());
-	var me = parseFloat($('#me').val());
-	var mf = parseFloat($('#mf').val());
-	var gv = parseFloat($('#gv').val());
-	var ar = parseFloat($('#ar').val());
-	var mass = parseFloat($('#mass').val());*/
-
-	return {
-		gv: -9.8,
-
-	};
-
-}
-
-
-function particleSim(props){
-	var gravity = new VectorForce($V([0, props.gv, 0]));
-	var forces = [gravity];
-	var generators = [];
-	var pg = new ConstantPosition($V([0, 0, 0]));
-	var dg = new DirectionGenSphere();
-	var sg = new SpeedGenN(3, 2);
-	var omniGen = new ParticleGenerator(0, 10, 400, pg, dg, sg, function(){}, {mass: 2, elasticity: .6, life: 2, lcol: 0x00FF00});
-	var nState = new State(forces, [omniGen], 0);
-	return nState;
-
-}
 function mainLoop(){
 	makeScene();
-		var clock = new THREE.Clock;
+	var clock = new THREE.Clock;
 	var d = new Date();
 
 	var preFrameTime = d.getTime();
 	console.log(preFrameTime);
 	var fragmentsOfTime = 0;
 
-	var props = basicProps();
-    simState = particleSim(props);
 	
     timeStep = 50;
 	renderer.render(scene, camera);
@@ -275,10 +157,10 @@ function mainLoop(){
 		points.geometry.vertices[i].x = -10000;
 
 	}
-		points.geometry.verticesNeedUpdate = true;
+	points.geometry.verticesNeedUpdate = true;
 	renderer.render(scene, camera);
 
-
+	initializeTieFighters();
 
 	function render() {
 		renderer.clear();
@@ -300,34 +182,44 @@ function mainLoop(){
 	    }
 
 	    for (var i = 0; i < stepsGoneThrough; i ++){
-	    	eulerStep(simState);
+
+	    	//dump all objects into stateArray
+	    	for(var j =0; j < fighterArray.length; j++){
+	    		var ind = j* PROPERTIES_PER_AGENT;
+	    		fighterArray[j].copyToStateArray(ind, stateArray);
+	    	}
+	    	calculateStateDynamics(stateTime);
+
+	    	//like, other stuff here
+
+	    	var newStateArray = numericallyIntegrate(timeStep);
+
+	    	//collision detect here
+
+	    	stateArray = newStateArray; 
+
+	    	//dump all objects into stateArray
+	    	for(var j =0; j < fighterArray.length; j++){
+	    		var ind = j* PROPERTIES_PER_AGENT;
+	    		fighterArray[j].copyFromStateArray(ind, stateArray);
+	    	}
+
+	    	nyeah = nyeah + 1;
+	    	stateTime = (timeStep/1000)*nyeah;
+
 		}
-		for (var i = 0; i < particleList.length; i++){
-			var p = particleList[i];
 
+		for (var i = 0; i < NUMBER_OF_AGENTS; i++){
+			var p = fighterArray[i];
 			var rend = points.geometry.vertices[p.rendering];
-
-
-
-
 			rend.x = p.p.e(1);
 			rend.y = p.p.e(2);
 			rend.z = p.p.e(3);
-/*
-			if(p.p.e(2) < -10){
-				points.geometry.colors[p.rendering] = new THREE.Color(0xFF0000);
-			}
-			if(p.p.e(2) < -5){
-				points.geometry.colors[p.rendering] = new THREE.Color(0xFF0000);
-			}*/
+
 
 		}
 		points.geometry.verticesNeedUpdate = true;
 		points.geometry.colorsNeedUpdate = true;
-
-	 	if(simState.resting){
-	 		isplaying = false;
-		}
 
 	 	if(isplaying){
 	 		requestAnimationFrame(render);
