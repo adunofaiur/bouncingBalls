@@ -1,6 +1,6 @@
 var renderer, cube, sphere, scene, camere, points, colors = [], pMaterial, pGeo;
 
-var timeStep = 10;
+var timeStep = 100;
 var isplaying =  false;
 var FRICTION_COEFFICIENT = .1;
 var AIR_RESISTANCE = .1;
