@@ -49,7 +49,7 @@ function ColumbPoint(anchor, constant, rendering){
 
 
 function makeScene(){
-	var width = 700;
+	var width = 1400;
 	var height = 700;
 	renderer = new THREE.WebGLRenderer({ antialias: true });
 	renderer.setSize(width, height);
