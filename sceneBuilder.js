@@ -156,7 +156,7 @@ function makeScene(){
 function resetSim(aState){
 
 }
-
+var radded = false;
 
 function mainLoop(){
 	makeScene();
@@ -231,14 +231,17 @@ function mainLoop(){
 			scene.remove(splosion);
 		}
 		else if(stateTime > 12){
-			
-			scene.remove(sphere);
+			if(!radded){
+				scene.remove(sphere);
 				var map = THREE.ImageUtils.loadTexture('e.gif');
 				var material = new THREE.SpriteMaterial({map: map, color: 0xffffff, fog: true, transparent: true});
 				splosion = new THREE.Sprite(material);
 				splosion.scale.set(30, 30, 1);
 				splosion.position.y = 100;
 				scene.add(splosion);
+				radded = true;
+			}
+			
 
 
 		}
