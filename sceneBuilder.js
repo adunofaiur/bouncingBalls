@@ -8,13 +8,16 @@ var pSize = [];
 var pOpacity = [];
 pointsIndex = 0;
 var nyeah = 0;
-var MAX_PARTS = 500;
+var MAX_PARTS = 100;
 var tempForceHolder = [];
 var stateTime = 0;
 var particleList = [];
 var pointList;
 var pli = 0;
-
+var awingFighter;
+var awing;
+var sphere;
+var splosion;
 function buildDiv(className){
 	var elem = document.createElement('div');
 	elem.className = className;
@@ -75,8 +78,8 @@ function makeScene(){
 	scene.add(camera);
 
  	pGeo = new THREE.Geometry();
-    var sprite = THREE.ImageUtils.generateDataTexture(16, 16, 0x00FF00);
-	for ( i = 0; i < MAX_PARTS; i ++ ) {
+	var tex = THREE.ImageUtils.loadTexture('Tie-Fighter-03-icon.png');
+		for ( i = 0; i < MAX_PARTS; i ++ ) {
 
 		var vertex = new THREE.Vector3();
 		vertex.x = 0;
@@ -85,19 +88,24 @@ function makeScene(){
 
 		pGeo.vertices.push( vertex );
 
-		colors[ i ] = new THREE.Color( 0x000000 );
+		//colors[ i ] = new THREE.Color( 0xFFFFFF );
 
 	}
-	pGeo.colors = colors;
-	pMaterial = new THREE.PointsMaterial( { size: 1, vertexColors: THREE.VertexColors, alphaTest: 0.5, transparent: true } );
+	
+	pMaterial = new THREE.PointsMaterial( { size: 10, map: tex, transparent: true} );
+				pMaterial.color.setHSL( 1.0, 0.3, 0.7 );
 
 	points = new THREE.Points( pGeo, pMaterial );
 	points.position.x = 0;
 	points.position.y = 0;
 	points.position.z = 0;
 	scene.add( points );
-
-
+	var dsmap = THREE.ImageUtils.loadTexture('ds.png');;
+	var geometry = new THREE.SphereGeometry( 20, 32, 32 ); var material = new THREE.MeshBasicMaterial( {map: dsmap, color: 0xffffff} );  sphere = new THREE.Mesh( geometry, material ); scene.add( sphere );	
+	sphere.rotateX(Math.PI);
+	sphere.position.y = 100;
+	sphere.position.x = 0;
+	sphere.position.z = 0;
 
 	camera.lookAt(cube.position);
 	var  controls = new THREE.OrbitControls(camera, renderer.domElement)
@@ -132,6 +140,14 @@ function makeScene(){
 	 
 	scene.add(pointLight);
 
+	//setup a wing
+
+	var map = THREE.ImageUtils.loadTexture('ship_owens.png');
+	var material = new THREE.SpriteMaterial({map: map, color: 0xffffff, fog: true, transparent: true, size: 20});
+	awing = new THREE.Sprite(material);
+	awing.scale.set(10, 10, 1);
+	scene.add(awing);
+
 
 }
 
@@ -140,6 +156,7 @@ function makeScene(){
 function resetSim(aState){
 
 }
+
 
 function mainLoop(){
 	makeScene();
@@ -161,7 +178,7 @@ function mainLoop(){
 	renderer.render(scene, camera);
 
 	initializeTieFighters();
-
+	initializeAWing();
 	function render() {
 		renderer.clear();
 
@@ -188,6 +205,7 @@ function mainLoop(){
 	    		var ind = j* PROPERTIES_PER_AGENT;
 	    		fighterArray[j].copyToStateArray(ind, stateArray);
 	    	}
+	    	awingFighter.copyToStateArray((fighterArray.length*PROPERTIES_PER_AGENT), stateArray);
 	    	calculateStateDynamics(stateTime);
 
 	    	//like, other stuff here
@@ -203,13 +221,49 @@ function mainLoop(){
 	    		var ind = j* PROPERTIES_PER_AGENT;
 	    		fighterArray[j].copyFromStateArray(ind, stateArray);
 	    	}
+	    	awingFighter.copyFromStateArray((fighterArray.length*PROPERTIES_PER_AGENT), stateArray);
 
 	    	nyeah = nyeah + 1;
 	    	stateTime = (timeStep/1000)*nyeah;
 
 		}
+		if(stateTime > 13){
+			scene.remove(splosion);
+		}
+		else if(stateTime > 12){
+			
+			scene.remove(sphere);
+				var map = THREE.ImageUtils.loadTexture('e.gif');
+				var material = new THREE.SpriteMaterial({map: map, color: 0xffffff, fog: true, transparent: true});
+				splosion = new THREE.Sprite(material);
+				splosion.scale.set(30, 30, 1);
+				splosion.position.y = 100;
+				scene.add(splosion);
 
-		for (var i = 0; i < NUMBER_OF_AGENTS; i++){
+
+		}
+		else if(stateTime > 10){
+			var flash = Math.floor(stateTime);
+			var starzzz = stateTime-flash;
+			if(starzzz < 0.1 || (starzzz > 0.3 && starzzz < 0.4) || (starzzz > 0.5 && starzzz < 0.6) || (starzzz > 0.7 && starzzz < 0.8) || starzzz > 0.9){
+				sphere.material.color = new THREE.Color(0xFF0000);
+
+			}else{
+				sphere.material.color = new THREE.Color(0xFFFFFF);
+			}
+
+		}else if(stateTime > 6){
+			var flash = Math.floor(stateTime);
+			var starzzz = stateTime-flash;
+			if(starzzz < .1){
+				sphere.material.color = new THREE.Color(0xFF0000);
+
+			}else{
+				sphere.material.color = new THREE.Color(0xFFFFFF);
+			}
+
+		}
+		for (var i = 0; i < (NUMBER_OF_AGENTS-1); i++){
 			var p = fighterArray[i];
 			var rend = points.geometry.vertices[p.rendering];
 			rend.x = p.p.e(1);
@@ -218,6 +272,10 @@ function mainLoop(){
 
 
 		}
+		awing.position.x = awingFighter.p.e(1);
+		awing.position.y = awingFighter.p.e(2);
+		awing.position.z = awingFighter.p.e(3);
+
 		points.geometry.verticesNeedUpdate = true;
 		points.geometry.colorsNeedUpdate = true;
 
@@ -266,9 +324,4 @@ function mainLoop(){
 
 	})
 
-	
-	
-
-	if(isplaying)
-		render();
 }

@@ -1,4 +1,4 @@
-var NUMBER_OF_AGENTS = 100;
+var NUMBER_OF_AGENTS = 101;
 var PROPERTIES_PER_AGENT = 8;
 var TIE_FIGHTER = 0;
 var A_WING = 1;
@@ -14,33 +14,60 @@ var forceArray = new Array();
 
 
 function force(objectindex, t, objectName){
-	var k = 1;
+	var ka = 2;
+	var kc = 100000;
+	var kv = 100;
 	var actualIndex = objectindex / PROPERTIES_PER_AGENT;
 	var acceleration = $V([0, 0, 0]);
-	for(var j = 0; j < NUMBER_OF_AGENTS; j++){
+	var amax = 10;
+	var ar = 10;
+	
+	if(objectName == 0){
+		for(var j = 0; j < NUMBER_OF_AGENTS; j++){
+			var jindex = j*PROPERTIES_PER_AGENT;
+			if(j != actualIndex){
+				
+				var xij = $V([ (-stateArray[objectindex] + stateArray[jindex]),
+							   (-stateArray[objectindex+1] + stateArray[jindex+1]),
+							   (-stateArray[objectindex+2] + stateArray[jindex+2])
+					]);
+				var distance = magnitude(xij);
+				if(distance > 100){
+					distance = $V([0, 0, 0]);
+				}else{
+					var direction = xij.toUnitVector();
+					var avoidance = direction.multiply((-ka/distance));
+					if(magnitude(avoidance) > 10){
+						avoidance = avoidance.toUnitVector().multiply(10);
+					}
+					var matching = $V([
+						(-stateArray[objectindex+3] + stateArray[jindex+3]),
+						(-stateArray[objectindex+4] + stateArray[jindex+4]),
+						(-stateArray[objectindex+5] + stateArray[jindex+5])
+						]);
+					matching = matching.multiply(kv);
+					var centering = xij.multiply(kc);
+					if(magnitude(centering) > 10){
+						centering = centering.toUnitVector().multiply(10);
+					}
 
-		if(j != actualIndex){
-			var xij = $V([ (-stateArray[objectindex] + stateArray[j*PROPERTIES_PER_AGENT]),
-						   (-stateArray[objectindex+1] + stateArray[j*PROPERTIES_PER_AGENT+1]),
-						   (-stateArray[objectindex+2] + stateArray[j*PROPERTIES_PER_AGENT+2])
-				]);
-			var distance = magnitude(xij);
-			var direction = xij.toUnitVector();
-			var avoidance = direction.multiply((-0/distance));
-			var matching = $V([
-				(-stateArray[objectindex+3] + stateArray[j*PROPERTIES_PER_AGENT+3]),
-				(-stateArray[objectindex+4] + stateArray[j*PROPERTIES_PER_AGENT+4]),
-				(-stateArray[objectindex+5] + stateArray[j*PROPERTIES_PER_AGENT+5])
-				]);
-			matching = matching.multiply(0);
-			var centering = xij.multiply(0);
-			acceleration = acceleration.add(avoidance);
-			acceleration = acceleration.add(matching);
-			acceleration = acceleration.add(centering);
+					//acceleration = acceleration.add(avoidance);
+					//acceleration = acceleration.add(matching);
+					acceleration = acceleration.add(centering);
+				}
+				
+			}
 		}
+	}else{
+		console.log('aha');
 	}
+	
+
 	return acceleration;
 
+}
+function initializeAWing(){
+	awingFighter = new Particle($V([100, 100, 0]), $V([-30, 1, 0]), awing, 1, 1);
 }
 
 
@@ -49,14 +76,21 @@ function numericallyIntegrate(h){
 	for (var i = 0; i < NUMBER_OF_AGENTS; i++){
 		var objectindex = i*PROPERTIES_PER_AGENT;
 		var dynamicsIndex = i*6;
-
 		sNew[objectindex] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex] * (h/1000));
-		sNew[objectindex+1] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+1] * (h/1000));
-		sNew[objectindex+2] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+2] * (h/1000));
+		sNew[objectindex+1] = stateArray[objectindex+1] + (dynamicsArray[dynamicsIndex+1] * (h/1000));
+		sNew[objectindex+2] = stateArray[objectindex+2] + (dynamicsArray[dynamicsIndex+2] * (h/1000));
 
-		sNew[objectindex+3] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+3] * (h/1000));
-		sNew[objectindex+4] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+4] * (h/1000));
-		sNew[objectindex+5] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+5] * (h/1000));
+		sNew[objectindex+3] = stateArray[objectindex+3] + (dynamicsArray[dynamicsIndex+3] * (h/1000));
+		sNew[objectindex+4] = stateArray[objectindex+4] + (dynamicsArray[dynamicsIndex+4] * (h/1000));
+		sNew[objectindex+5] = stateArray[objectindex+5] + (dynamicsArray[dynamicsIndex+5] * (h/1000));
+		var vel = $V([sNew[objectindex+3], sNew[objectindex+4], sNew[objectindex+5]]);
+		if(magnitude(vel) > 100 && stateArray[objectindex+7]==0){
+			vel = vel.toUnitVector().multiply(100);
+		}
+		sNew[objectindex+3] = vel.e(1);
+		sNew[objectindex+4] = vel.e(2);
+		sNew[objectindex+5] = vel.e(3);
+
 		sNew[objectindex+6] = stateArray[objectindex+6];
 		sNew[objectindex+7] = stateArray[objectindex+7];
 
@@ -65,7 +99,10 @@ function numericallyIntegrate(h){
 }
 
 function calculateStateDynamics(t){
-	
+		var dsSize = 20;
+		var dsDist = 30;
+		var dsCent = $V([0, 100, 0]);
+
 	for (i = 0; i < NUMBER_OF_AGENTS; i++){
 		var objectindex = i*PROPERTIES_PER_AGENT;
 		var dynamicsIndex = i*6;
@@ -73,7 +110,107 @@ function calculateStateDynamics(t){
 		dynamicsArray[dynamicsIndex+1] = stateArray[objectindex+4];
 		dynamicsArray[dynamicsIndex+2] = stateArray[objectindex+5];
 
-		var acceleration = force(i, t, stateArray[objectindex+7]).multiply(1/stateArray[objectindex+6]);
+		var acceleration = force(i, t, stateArray[objectindex+7]);
+		//accelerate towards target
+		var awingind = (NUMBER_OF_AGENTS-1)*PROPERTIES_PER_AGENT;
+		if(stateArray[objectindex+7] == 0){
+			var xt = $V([ (-stateArray[objectindex] + stateArray[awingind]),
+						   (-stateArray[objectindex+1] + stateArray[awingind+1]),
+						   (-stateArray[objectindex+2] + stateArray[awingind+2])
+				]);
+			if(t >= 12.5){
+				xt = $V([ (stateArray[objectindex] + 0),
+						   (stateArray[objectindex+1] + 100),
+						   (stateArray[objectindex+2] + 0)
+				]);
+				xt = xt
+			}
+			acceleration =	acceleration.add(xt).multiply(1/stateArray[objectindex+6]);
+
+			//do steering around our death star
+			var xi = $V([stateArray[objectindex+0], stateArray[objectindex+1], stateArray[objectindex+2]])
+			var vi = $V([stateArray[objectindex+3], stateArray[objectindex+4], stateArray[objectindex+5]])
+			var vihat = vi.toUnitVector();
+			var xis = dsCent.subtract(xi);
+			var sclose = xis.dot(vihat);
+			var dc = magnitude(vi)*2;
+
+			if(sclose >= 0 && sclose <= dc){
+				var xclose = vihat.multiply(sclose).add(xi);
+				var d = magnitude(xclose.subtract(dsCent));
+				if (d <= dsDist){
+					var vt = xclose.subtract(dsCent);
+					var vthat = vt.toUnitVector();
+					var xt = vthat.multiply(dsDist);
+					xt = dsCent.add(xt);
+					var dt = magnitude(xt.subtract(xi));
+					var velt = xt.subtract(xi);
+					velt = vi.dot(velt)*(1/dt);
+
+					var tt = dt/velt;
+					var deltavs = magnitude(vihat.cross(xt.subtract(xi)))*(1/tt);
+					var as = deltavs * (2 / tt);
+					var addIn = vthat.multiply(as);
+					acceleration = acceleration.add(addIn);
+				}
+			}
+		}else{
+			
+			if(t >= 12.5){
+				var xt = $V([ (stateArray[objectindex] + 0),
+						   (stateArray[objectindex+1] + 100),
+						   (stateArray[objectindex+2] + 0)
+				]);
+					acceleration = acceleration.add(xt);
+			}else{
+				//do steering around our death star
+				var xi = $V([stateArray[objectindex+0], stateArray[objectindex+1], stateArray[objectindex+2]])
+				var vi = $V([stateArray[objectindex+3], stateArray[objectindex+4], stateArray[objectindex+5]])
+				var vihat = vi.toUnitVector();
+				var xis = dsCent.subtract(xi);
+				var sclose = xis.dot(vihat);
+				var dc = magnitude(vi)*2;
+
+				if(sclose >= 0 && sclose <= dc){
+					var xclose = vihat.multiply(sclose).add(xi);
+					var d = magnitude(xclose.subtract(dsCent));
+					if (d <= dsDist){
+						var vt = xclose.subtract(dsCent);
+						var vthat = vt.toUnitVector();
+						var xt = vthat.multiply(dsDist);
+						xt = dsCent.add(xt);
+						var dt = magnitude(xt.subtract(xi));
+						var velt = xt.subtract(xi);
+						velt = vi.dot(velt)*(1/dt);
+
+						var tt = dt/velt;
+						var deltavs = magnitude(vihat.cross(xt.subtract(xi)))*(1/tt);
+						var as = deltavs * (2 / tt);
+						var addIn = vthat.multiply(as);
+						acceleration = acceleration.add(addIn);
+					}
+				}else{
+					var xt = $V([ (0 - stateArray[awingind]),
+							   (100- stateArray[awingind+1]),
+							   (0 - stateArray[awingind+2])
+					]);
+					acceleration =	acceleration.add(xt).multiply(1/stateArray[objectindex+6]);
+
+				}
+			}
+			
+		}
+	
+
+		
+
+
+
+
+
+
+
+		//
 		dynamicsArray[dynamicsIndex+3] = acceleration.e(1);
 		dynamicsArray[dynamicsIndex+4] = acceleration.e(2);
 		dynamicsArray[dynamicsIndex+5] = acceleration.e(3);
@@ -123,11 +260,11 @@ function initializeTieFighters(){
 	
 	var forces = [];
 	var generators = [];
-	var pg = new ConstantPosition($V([0, 0, 0]));
-	var dg = new DirectionGenGeyser($V([-1, .5, 0]), .2);
+	var pg = new PositionGensSphere(20);
+	var dg = new DirectionGenSphere($V([-1, .5, 0]), .2);
 	var sg = new SpeedGenN(0, .01);
-	var gen = new FlockGenerator(pg, dg, sg, NUMBER_OF_AGENTS);
-	var fighters = gen.generate(10000, 0);
+	var gen = new FlockGenerator(pg, dg, sg, (NUMBER_OF_AGENTS-1));
+	var fighters = gen.generate(1, 0);
 	for (var i = 0; i < fighters.length; i++){
 		fighterArray.push(fighters[i]);
 	}
@@ -206,7 +343,20 @@ DirectionGenSphere.prototype.generate = function(){
 	var vInit = $V([x, y, z]).toUnitVector();
 	return vInit;
 }
+function PositionGensSphere(range){
+	this.range = range;
+}
+PositionGensSphere.prototype.generate = function(){
+	var theta = getRandomArbitrary(-Math.PI, Math.PI);
+	var height = getRandomArbitrary(-1, 1);
+	var r = Math.sqrt((1-(height * height)));
+	var x = r * Math.cos(theta);
+	var y = height;
+	var z = -r*Math.sin(theta);
 
+	var vInit = $V([x, y, z]).multiply(this.range);
+	return vInit;
+}
 function ConstantPosition(p){
 	this.p = p;
 }

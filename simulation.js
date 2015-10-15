@@ -220,27 +220,6 @@ function didItReallyCollide(xHit, edges){
 
 
 
-function numericallyIntegrate(h){
-	var sNew = [ARRAY_SIZE];
-	for (var i = 0; i < NUMBER_OF_AGENTS; i++){
-		var objectindex = i*PROPERTIES_PER_AGENT;
-		var dynamicsIndex = i*6;
-
-		sNew[objectindex] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex] * (h/1000));
-		sNew[objectindex+1] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+1] * (h/1000));
-		sNew[objectindex+2] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+2] * (h/1000));
-
-		sNew[objectindex+3] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+3] * (h/1000));
-		sNew[objectindex+4] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+4] * (h/1000));
-		sNew[objectindex+5] = stateArray[objectindex] + (dynamicsArray[dynamicsIndex+5] * (h/1000));
-
-	}
-	return sNew;
-}
-
-
-
-
 /*
 function eulerStep(state){
 	
