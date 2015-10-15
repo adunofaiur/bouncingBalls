@@ -145,7 +145,7 @@ function makeScene(){
 	var map = THREE.ImageUtils.loadTexture('ship_owens.png');
 	var material = new THREE.SpriteMaterial({map: map, color: 0xffffff, fog: true, transparent: true, size: 20});
 	awing = new THREE.Sprite(material);
-	awing.scale.set(10, 10, 1);
+	awing.scale.set(14, 14, 1);
 	scene.add(awing);
 
 
