@@ -57,7 +57,7 @@ function makeScene(){
 	scene = new THREE.Scene;
 	
 	var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
-	var cubeMaterials =[ new THREE.MeshLambertMaterial({ transparent: true ,color: 0x00ffff, opacity: .0 }),
+	var cubeMaterials =[ new THREE.MeshLambertMaterial({ transparent: true ,color: 0x00ffff, opacity: 1 }),
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFFCCFF, opacity: .0}),
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xCCFFCC, opacity: .0 }),
 		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFFCCCC, opacity: .0 }),
@@ -77,36 +77,7 @@ function makeScene(){
 	camera.position.z = 500;
 	scene.add(camera);
 
- 	pGeo = new THREE.Geometry();
-	var tex = THREE.ImageUtils.loadTexture('Tie-Fighter-03-icon.png');
-		for ( i = 0; i < MAX_PARTS; i ++ ) {
-
-		var vertex = new THREE.Vector3();
-		vertex.x = 0;
-		vertex.y = 0;
-		vertex.z = 0;
-
-		pGeo.vertices.push( vertex );
-
-		//colors[ i ] = new THREE.Color( 0xFFFFFF );
-
-	}
-	
-	pMaterial = new THREE.PointsMaterial( { size: 10, map: tex, transparent: true} );
-				pMaterial.color.setHSL( 1.0, 0.3, 0.7 );
-
-	points = new THREE.Points( pGeo, pMaterial );
-	points.position.x = 0;
-	points.position.y = 0;
-	points.position.z = 0;
-	scene.add( points );
-	var dsmap = THREE.ImageUtils.loadTexture('ds.png');;
-	var geometry = new THREE.SphereGeometry( 20, 32, 32 ); var material = new THREE.MeshBasicMaterial( {map: dsmap, color: 0xffffff} );  sphere = new THREE.Mesh( geometry, material ); scene.add( sphere );	
-	sphere.rotateX(Math.PI);
-	sphere.position.y = 100;
-	sphere.position.x = 0;
-	sphere.position.z = 0;
-
+	scene.add(cube);
 	camera.lookAt(cube.position);
 	var  controls = new THREE.OrbitControls(camera, renderer.domElement)
 	var skyboxGeometry = new THREE.CubeGeometry(10000, 10000, 10000);
@@ -158,6 +129,11 @@ function resetSim(aState){
 }
 var radded = false;
 
+
+
+
+
+
 function mainLoop(){
 	makeScene();
 	var clock = new THREE.Clock;
@@ -206,14 +182,18 @@ function mainLoop(){
 	    		fighterArray[j].copyToStateArray(ind, stateArray);
 	    	}
 	    	awingFighter.copyToStateArray((fighterArray.length*PROPERTIES_PER_AGENT), stateArray);
-	    	calculateStateDynamics(stateTime);
+	    	var sdot = calculateStateDynamics(stateArray, stateTime);
+	    	var newStateArray = rungeKutta(stateArray, sdot, (timeStep/1000), stateTime, calculateStateDynamics);
+
+
+	    	/*calculateStateDynamics(stateTime);
 
 	    	//like, other stuff here
 
 	    	var newStateArray = numericallyIntegrate(timeStep);
 
 	    	//collision detect here
-
+-*/
 	    	stateArray = newStateArray; 
 
 	    	//dump all objects into stateArray
@@ -224,7 +204,7 @@ function mainLoop(){
 	    	awingFighter.copyFromStateArray((fighterArray.length*PROPERTIES_PER_AGENT), stateArray);
 
 	    	nyeah = nyeah + 1;
-	    	stateTime = (timeStep/1000)*nyeah;
+	    	stateTime = (timeStep/1000)*nyeah; 
 
 		}
 		if(stateTime > 13){
