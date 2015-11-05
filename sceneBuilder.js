@@ -2,7 +2,7 @@ var renderer, cube, sphere, scene, camere, points, colors = [], pMaterial, pGeo;
 
 var timeStep = 100;
 var isplaying =  false;
-var FRICTION_COEFFICIENT = .1;
+var FRICTION_COEFFICIENT = .2;
 var AIR_RESISTANCE = .1;
 var pSize = [];
 var pOpacity = [];
@@ -18,6 +18,15 @@ var awingFighter;
 var awing;
 var sphere;
 var splosion;
+
+var objects = [];
+var struts = [];
+var vertices = [];
+var faces = [];
+var cube, cube2;
+var edges = [];
+var plane;
+var torsions =[];
 function buildDiv(className){
 	var elem = document.createElement('div');
 	elem.className = className;
@@ -47,8 +56,7 @@ function ColumbPoint(anchor, constant, rendering){
 }
 
 
-
-function makeScene(){
+function setupGeometries(){
 	var width = 700;
 	var height = 700;
 	renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -56,19 +64,20 @@ function makeScene(){
 	 $('.renderingHolder').append(renderer.domElement);
 	scene = new THREE.Scene;
 	
-	var cubeGeometry = new THREE.CubeGeometry(20, 20, 20);
-	var cubeMaterials =[ new THREE.MeshLambertMaterial({ transparent: true ,color: 0x00ffff, opacity: 1 }),
-		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFFCCFF, opacity: .0}),
-		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xCCFFCC, opacity: .0 }),
-		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFFCCCC, opacity: .0 }),
-		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xCCFFCC, opacity: .0 }),
-		new THREE.MeshLambertMaterial({ transparent: true ,color: 0xFF99CC, opacity: .0 })
-
-	];
+	var cubeGeometry = new THREE.Geometry();
+	var cubeMaterials = new THREE.MeshLambertMaterial({ transparent: true ,color: 0x00ffff, opacity: 1, wireframe: true});
 	
-	var cube = new THREE.Mesh(cubeGeometry, new THREE.MeshFaceMaterial(cubeMaterials));
+	cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
+	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
+	egh.material.linewidth = 2;
+	//scene.add( egh );	
 
 
+
+
+	var cubeGeometry = new THREE.Geometry();
+	var cubeMaterials = new THREE.MeshLambertMaterial({ transparent: true ,color: 0x00ffff, opacity: 1, wireframe: true});
+	
 	camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
 
 	camera.position.y = 20;
@@ -111,15 +120,241 @@ function makeScene(){
 	 
 	scene.add(pointLight);
 
-	//setup a wing
+}
+function Mesh(points, edges, struts, props, faces){
+	this.vertices = points;
+	this.struts = struts;
+	this.edges = edges;
+	this.props = props;
+	this.faces = faces;
+}
 
-	var map = THREE.ImageUtils.loadTexture('ship_owens.png');
-	var material = new THREE.SpriteMaterial({map: map, color: 0xffffff, fog: true, transparent: true, size: 20});
-	awing = new THREE.Sprite(material);
-	awing.scale.set(10, 10, 1);
-	scene.add(awing);
+function Vertice(p, type, r){
+	this.struts = [];
+	this.p = p;
+	this.v = $V([0, 0, 0]);
+	this.f = $V([0, 0, 0]);
+	this.mass= 7;
+	this.pType = type;
+	this.rendering = r;
+}
+Vertice.prototype.toArray = function(array, index){
+	array[index] = this.p.e(1);
+	array[index+1] = this.p.e(2);
+	array[index+2] = this.p.e(3);
+	array[index+3] = this.v.e(1);
+	array[index+4] = this.v.e(2);
+	array[index+5] = this.v.e(3);
+
+	array[index+6] = this.mass;
+	array[index+7] = this.pType;
+
+}
+
+Vertice.prototype.fromArray = function(array, index){
+	this.p.elements[0] = array[index];
+	this.p.elements[1] = array[index+1];
+	this.p.elements[2] = array[index+2];
+	this.v.elements[0] = array[index+3];
+	this.v.elements[1] = array[index+4];
+	this.v.elements[2] = array[index+5];
 
 
+	this.mass = array[index+6];
+	
+
+}
+
+function Face(struts, angels, vertices){
+	this.struts = struts;
+	this.angles = angels;
+	
+}
+function Strut(vertices, faces){
+	this.vertices = vertices;
+	this.faces = faces;
+	this.k = 11.1;
+	this.d = 2.8;
+	this.l = 70.7;
+}
+function Edge(start, end){
+	this.start = start;
+	this.end = end;
+}
+
+function Torsion(x0, x1, x2, x3, rest){
+	this.x0 = x0;
+	this.x1 = x1;
+	this.rest = rest;
+	this.k = 1000;
+	this.d = 500;
+	this.x2 = x2;
+	this.x3 = x3;
+}
+
+function setupData(properties){
+	
+	var pOut = $V([-50, 0, 0]);
+	cube.geometry.vertices.push(new THREE.Vector3( -50,  0, 0 ));
+	var pUp = $V([0, 0, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 0,  0, -50 ));
+
+	var pRight = $V([50, 10, 0]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  0, 0 ));
+
+	var PDown = $V([0, 0, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 0,  0, 50 ));
+
+	vertices.push(new Vertice(pOut, 0, cube.geometry.vertices[0]))
+	vertices.push(new Vertice(pUp, 0, cube.geometry.vertices[1]))
+	vertices.push(new Vertice(pRight, 0, cube.geometry.vertices[2]))
+	vertices.push(new Vertice(PDown, 0, cube.geometry.vertices[3]))
+	var timec = 5;
+	var dc = 2.8;
+	var kc = 11.1;
+	var s1 = new Strut([0, 1]);
+	var s2 = new Strut([1, 2]);
+
+	var s3 = new Strut([2, 0]);
+	var s4 = new Strut([0, 3]);
+	var s5 = new Strut([3, 2]);
+	struts.push(s1);
+		struts.push(s2);
+	struts.push(s3);
+	struts.push(s4);
+	struts.push(s5);
+
+	var face1 = new Face([s1, s2, s3], [Math.PI/4, Math.PI/2, Math.PI/4], [0, 1, 2]);
+	var face2 = new Face([s3, s4, s5], [Math.PI/4, Math.PI/4, Math.PI/2], [0, 2, 3]);
+
+	faces.push(face1);
+	faces.push(face2);
+	var t1 = new Torsion(0, 2, 1, 3, (Math.PI/4));
+	torsions.push(t1);
+	cube.geometry.faces.push( new THREE.Face3( 0, 1, 2) );
+	cube.geometry.faces.push( new THREE.Face3( 0, 2, 3) );
+
+	//setup the vertices of a cube at 0 0 0 that has points on the lines of 50
+	
+	/*for(var i = 0; i  < 8; i++){
+		var x = 50;
+		if(i >= 4){
+			x = -50;
+		}
+		var y = 50;
+		if(i == 2 || i == 3 || i == 6 || i == 7){
+			y = -50;
+		}
+		var z = 50;
+		if(i == 1 || i == 3 || i == 4 || i == 6){
+			z = -50;
+		}
+		var nv = new Vertice($V([x, y, z]), $V([0, 0, 0]), 1, cube.geometry.vertices[i], 0);
+		vertices.push(nv);
+	}
+	edges.push(new Edge(7, 2));
+	edges.push(new Edge(7, 0));
+	edges.push(new Edge(7, 6));
+	edges.push(new Edge(7, 5));
+	edges.push(new Edge(6, 3));
+	edges.push(new Edge(6, 4));
+	edges.push(new Edge(6, 2));
+	edges.push(new Edge(6, 5));
+	edges.push(new Edge(3, 2));
+	edges.push(new Edge(3, 1));
+	edges.push(new Edge(3, 4));
+	edges.push(new Edge(2, 0));
+	edges.push(new Edge(2, 1));
+	edges.push(new Edge(5, 4));
+	edges.push(new Edge(5, 1));
+	edges.push(new Edge(5, 0));
+	edges.push(new Edge(4, 1));
+	edges.push(new Edge(1, 0));*/
+/*
+	var p1 = $V([-100, -100, 100])
+	vertices.push(new Vertice(p1, $V([0, 0, 0]), 1, plane.geometry.vertices[0], 1));
+	var p2 = $V([100, -100, 100])
+	var p3 = $V([-100, -100, -100])
+	var p4 = $V([ 100, -100, -100])
+	vertices.push(new Vertice(p2, $V([0, 0, 0]), 1, plane.geometry.vertices[1], 2));
+vertices.push(new Vertice(p3, $V([0, 0, 0]), 1, plane.geometry.vertices[2], 2));
+	vertices.push(new Vertice(p4, $V([0, 0, 0]), 1, plane.geometry.vertices[3], 2));
+	faces.push(new Face([], [], [8, 9, 11, 10]));*/
+
+
+
+/*
+	faces.push(new Face([], [], [5, 7, 2, 0]));
+	faces.push(new Face([], [], [0, 2, 3, 1]));
+	faces.push(new Face([], [], [1, 3, 6, 4]));
+	faces.push(new Face([], [], [4, 6, 7, 5]));
+	faces.push(new Face([], [], [4, 5, 0, 1]));
+	faces.push(new Face([], [], [7, 6, 3, 2]));*/
+
+	//static cube 2
+	/*
+	for(var i = 0; i  < 8; i++){
+		var x = 50;
+		if(i >= 4){
+			x = -50;
+		}
+		var y = -150;
+		if(i == 2 || i == 3 || i == 6 || i == 7){
+			y = -250;
+		}
+		var z = 50;
+		if(i == 1 || i == 3 || i == 4 || i == 6){
+			z = -50;
+		}
+		var p = $V([x, y, z]);
+		var m = $M([[.7071, -.7071, 0],[.7071, .7071, 0],[0, 0, 1]]);
+		p = m.multiply(p);
+		p.elements[0] = p.elements[0] -225;
+				p.elements[1] = p.elements[1] -10;
+				p.elements[2] = p.elements[2] + 50;
+		var nv = new Vertice(p, $V([0, 0, 0]), 1, cube2.geometry.vertices[i], 1);
+		vertices.push(nv);
+	}
+	var indexForCube2 = 8;
+	edges.push(new Edge(7+indexForCube2, 2+indexForCube2));
+	edges.push(new Edge(7+indexForCube2, 0+indexForCube2));
+	edges.push(new Edge(7+indexForCube2, 6+indexForCube2));
+	edges.push(new Edge(7+indexForCube2, 5+indexForCube2));
+	edges.push(new Edge(6+indexForCube2, 3+indexForCube2));
+	edges.push(new Edge(6+indexForCube2, 4+indexForCube2));
+	edges.push(new Edge(6+indexForCube2, 2+indexForCube2));
+	edges.push(new Edge(6+indexForCube2, 5+indexForCube2));
+	edges.push(new Edge(3+indexForCube2, 2+indexForCube2));
+	edges.push(new Edge(3+indexForCube2, 1+indexForCube2));
+	edges.push(new Edge(3+indexForCube2, 4+indexForCube2));
+	edges.push(new Edge(2+indexForCube2, 0+indexForCube2));
+	edges.push(new Edge(2+indexForCube2, 1+indexForCube2));
+	edges.push(new Edge(5+indexForCube2, 4+indexForCube2));
+	edges.push(new Edge(5+indexForCube2, 1+indexForCube2));
+	edges.push(new Edge(5+indexForCube2, 0+indexForCube2));
+	edges.push(new Edge(4+indexForCube2, 1+indexForCube2));
+	edges.push(new Edge(1+indexForCube2, 0+indexForCube2));
+
+	faces.push(new Face([], [], [5+indexForCube2, 7+indexForCube2, 2+indexForCube2, 0+indexForCube2]));
+	faces.push(new Face([], [], [0+indexForCube2, 2+indexForCube2, 3+indexForCube2, 1+indexForCube2]));
+	faces.push(new Face([], [], [1+indexForCube2, 3+indexForCube2, 6+indexForCube2, 4+indexForCube2]));
+	faces.push(new Face([], [], [4+indexForCube2, 6+indexForCube2, 7+indexForCube2, 5+indexForCube2]));
+	faces.push(new Face([], [], [4+indexForCube2, 5+indexForCube2, 0+indexForCube2, 1+indexForCube2]));
+	faces.push(new Face([], [], [7+indexForCube2, 6+indexForCube2, 3+indexForCube2, 2+indexForCube2]));*/
+
+
+
+}
+
+function getProperties(){
+	return {};
+}
+
+function makeScene(){
+	
+	var properties = getProperties();
+	setupGeometries();
+	setupData(properties);
 }
 
 
@@ -146,126 +381,70 @@ function mainLoop(){
 	
     timeStep = 50;
 	renderer.render(scene, camera);
-	for ( i = 0; i < MAX_PARTS; i ++ ) {
-		points.geometry.vertices[i].x = -10000;
-
-	}
-	points.geometry.verticesNeedUpdate = true;
-	renderer.render(scene, camera);
-
-	initializeTieFighters();
-	initializeAWing();
 	function render() {
 		renderer.clear();
 
 		renderer.render(scene, camera);
 		var n = new Date();
-	    var frameTime = n.getTime();
+	    if(isplaying){
+	    	 var frameTime = n.getTime();
 	    
-	    //determine how many steps to take
-	    var timePassed = frameTime - preFrameTime;
-	    var timeToConsider = timePassed + fragmentsOfTime;
-	    var stepsGoneThrough = Math.floor(timeToConsider / timeStep);
-	    fragmentsOfTime = timeToConsider % timeStep;
-		preFrameTime = frameTime;
-	    
-	    if(stepsGoneThrough > 0){
-	    	console.log(('steps: ' + stepsGoneThrough.toString()));
+		    //determine how many steps to take
+		    
+		    var timePassed = frameTime - preFrameTime;
+		    var timeToConsider = timePassed + fragmentsOfTime;
+		    var stepsGoneThrough = Math.floor(timeToConsider / timeStep);
+		    fragmentsOfTime = timeToConsider % timeStep;
+			preFrameTime = frameTime;
+		    
+		    //simulate timesteps
+		    for (var i = 0; i < stepsGoneThrough; i ++){
 
-	    }
-
-	    for (var i = 0; i < stepsGoneThrough; i ++){
-
-	    	//dump all objects into stateArray
-	    	for(var j =0; j < fighterArray.length; j++){
-	    		var ind = j* PROPERTIES_PER_AGENT;
-	    		fighterArray[j].copyToStateArray(ind, stateArray);
-	    	}
-	    	awingFighter.copyToStateArray((fighterArray.length*PROPERTIES_PER_AGENT), stateArray);
-	    	var sdot = calculateStateDynamics(stateArray, stateTime);
-	    	var newStateArray = rungeKutta(stateArray, sdot, (timeStep/1000), stateTime, calculateStateDynamics);
+		    	//dump all objects into stateArray
+		    	for (var j = 0; j < vertices.length; j++){
+		    		vertices[j].toArray(stateArray, (j*PROPERTIES_PER_AGENT));
+		    	}
+		    	var sdot = calculateStateDynamics(stateArray, stateTime);
+		    	var newStateArray = rungeKutta(stateArray, sdot, (timeStep/1000), stateTime, calculateStateDynamics);
 
 
-	    	/*calculateStateDynamics(stateTime);
+		    	/*calculateStateDynamics(stateTime);
 
-	    	//like, other stuff here
+		    	//like, other stuff here
 
-	    	var newStateArray = numericallyIntegrate(timeStep);
+		    	var newStateArray = numericallyIntegrate(timeStep);
 
-	    	//collision detect here
--*/
-	    	stateArray = newStateArray; 
+		    	//collision detect here
+	-*/
+		    	stateArray = newStateArray; 
 
-	    	//dump all objects into stateArray
-	    	for(var j =0; j < fighterArray.length; j++){
-	    		var ind = j* PROPERTIES_PER_AGENT;
-	    		fighterArray[j].copyFromStateArray(ind, stateArray);
-	    	}
-	    	awingFighter.copyFromStateArray((fighterArray.length*PROPERTIES_PER_AGENT), stateArray);
+		    	//dump all objects into stateArray
+		    	for(var j =0; j < vertices.length; j++){
+		    		vertices[j].fromArray(stateArray, (j*PROPERTIES_PER_AGENT));
 
-	    	nyeah = nyeah + 1;
-	    	stateTime = (timeStep/1000)*nyeah; 
+		    	}
 
-		}
-		if(stateTime > 13){
-			scene.remove(splosion);
-		}
-		else if(stateTime > 12){
-			if(!radded){
-				scene.remove(sphere);
-				var map = THREE.ImageUtils.loadTexture('e.gif');
-				var material = new THREE.SpriteMaterial({map: map, color: 0xffffff, fog: true, transparent: true});
-				splosion = new THREE.Sprite(material);
-				splosion.scale.set(30, 30, 1);
-				splosion.position.y = 100;
-				scene.add(splosion);
-				radded = true;
-			}
+		    	nyeah = nyeah + 1;
+		    	stateTime = (timeStep/1000)*nyeah; 
 			
 
+		    }
+		    //update vertices IRL
+		    for (var i = 0; i < vertices.length; i++){
+		    	vertices[i].rendering.x = vertices[i].p.e(1)
+		    	vertices[i].rendering.y = vertices[i].p.e(2);
+		    	vertices[i].rendering.z = vertices[i].p.e(3);
+		    	cube.geometry.verticesNeedUpdate = true;
 
-		}
-		else if(stateTime > 10){
-			var flash = Math.floor(stateTime);
-			var starzzz = stateTime-flash;
-			if(starzzz < 0.1 || (starzzz > 0.3 && starzzz < 0.4) || (starzzz > 0.5 && starzzz < 0.6) || (starzzz > 0.7 && starzzz < 0.8) || starzzz > 0.9){
-				sphere.material.color = new THREE.Color(0xFF0000);
+		    }
+	    }else{
+	    	preFrameTime = n.getTime();
+	    }
+	   
 
-			}else{
-				sphere.material.color = new THREE.Color(0xFFFFFF);
-			}
+	 	requestAnimationFrame(render);
 
-		}else if(stateTime > 6){
-			var flash = Math.floor(stateTime);
-			var starzzz = stateTime-flash;
-			if(starzzz < .1){
-				sphere.material.color = new THREE.Color(0xFF0000);
-
-			}else{
-				sphere.material.color = new THREE.Color(0xFFFFFF);
-			}
-
-		}
-		for (var i = 0; i < (NUMBER_OF_AGENTS-1); i++){
-			var p = fighterArray[i];
-			var rend = points.geometry.vertices[p.rendering];
-			rend.x = p.p.e(1);
-			rend.y = p.p.e(2);
-			rend.z = p.p.e(3);
-
-
-		}
-		awing.position.x = awingFighter.p.e(1);
-		awing.position.y = awingFighter.p.e(2);
-		awing.position.z = awingFighter.p.e(3);
-
-		points.geometry.verticesNeedUpdate = true;
-		points.geometry.colorsNeedUpdate = true;
-
-	 	if(isplaying){
-	 		requestAnimationFrame(render);
-
-	 	}
+	 	
 	}
 
 	var playButton = $('#playbutton')[0];
@@ -306,5 +485,5 @@ function mainLoop(){
 		render();
 
 	})
-
+   render();
 }
