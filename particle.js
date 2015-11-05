@@ -83,6 +83,7 @@ function calculateStateDynamics(a, t){
 		dynamicsArray[dynamicsIndex+5] = acceleration.e(3);
 
 	}
+	//strut your stuff
 	for (var i = 0; i < struts.length; i++){
 		var sForce = $V([0, 0, 0]);
 		var vi = vertices[struts[i].vertices[0]];
@@ -93,24 +94,30 @@ function calculateStateDynamics(a, t){
 		var distance = magxij - (struts[i].l);
 		var withK = distance * struts[i].k;
 		var sForce = dirxji.multiply(withK);
-		var iIndex = struts[i].vertices[0] * PROPERTIES_PER_AGENT;
-		var jIndex = struts[i].vertices[1] * PROPERTIES_PER_AGENT;
+		var iIndex = struts[i].vertices[0] * 6;
+		var jIndex = struts[i].vertices[1] * 6;
 
 		var velDist = vj.v.subtract(vi.v);
-		var ineerTerm = dirxji.dot(velDist);
+		var ineerTerm = (velDist).dot(dirxji);
 		ineerTerm = ineerTerm * struts[i].d;
 		var dampForce = dirxji.multiply(ineerTerm);
 		var a1 = sForce.add(dampForce);
 		var a2 = a1.multiply(-1);
-		a1 = a1.multiply((1/a[iIndex+6]));
-		a2 = a2.multiply((1/a[jIndex+6]));
+		a1 = a1.multiply((1/7));
+		a2 = a2.multiply((1/7));
+/*
+		if(magnitude(a1) > 5){
+			a1 = a1.toUnitVector().multiply(5);
+			a2 = a2.toUnitVector().multiply(5);
+
+		}*/
 
 		dynamicsArray[iIndex+3] = dynamicsArray[iIndex+3] + a1.e(1);
 		dynamicsArray[iIndex+4] = dynamicsArray[iIndex+4] + a1.e(2);
 		dynamicsArray[iIndex+5] = dynamicsArray[iIndex+5] + a1.e(3);
-		dynamicsArray[jIndex+3] = dynamicsArray[iIndex+3] + a2.e(1);
-		dynamicsArray[jIndex+4] = dynamicsArray[iIndex+4] + a2.e(2);
-		dynamicsArray[jIndex+5] = dynamicsArray[iIndex+5] + a2.e(3);
+		dynamicsArray[jIndex+3] = dynamicsArray[jIndex+3] + a2.e(1);
+		dynamicsArray[jIndex+4] = dynamicsArray[jIndex+4] + a2.e(2);
+		dynamicsArray[jIndex+5] = dynamicsArray[jIndex+5] + a2.e(3);
 
 
 	}
@@ -137,8 +144,8 @@ function calculateStateDynamics(a, t){
 		var x01 = x1.subtract(x0)
 		var h = x1.subtract(x0);
 		var hhat = h.toUnitVector();
-		var d02 = x2.subtract(x0).dot(hhat);
-		var d03 = x3.subtract(x0).dot(hhat);
+		var d02 = x02.dot(hhat);
+		var d03 = x03.dot(hhat);
 		var rl = hhat.multiply(d02);
 		rl = x02.subtract(rl);
 		var rr = hhat.multiply(d03);
@@ -153,25 +160,43 @@ function calculateStateDynamics(a, t){
 		var roe = hhat.multiply(torsions[i].k*(theta - torsions[i].rest) - torsions[i].d*(thetal+thetar))
 		var f3 = nr.multiply(roe.dot(hhat)/magnitude(rr)).multiply(1/7);
 		var f2 = nl.multiply(roe.dot(hhat)/magnitude(rl)).multiply(1/7);
-		var f1 = (f2.multiply(d02).add(f3.multiply(d03))).multiply(1/magnitude(x01)).multiply(-1/7);
-		var f0 = f1.add(f2).add(f3).multiply(-1/7);
+		var f1 = f2.multiply(d02).add((f3.multiply(d03)));
+		f1 = f1.multiply(-1/magnitude(x01)).multiply(1/7);
 
-		var xindex = x0i * PROPERTIES_PER_AGENT;
+
+
+		//∂(f2.multiply(d02).add(f3.multiply(d03))).multiply(1/magnitude(x01)).multiply(-1/7);
+		var f0 = f1.add(f2).add(f3).multiply(-1/70);
+		if(magnitude(f0) > 10){
+			f0 = a1.toUnitVector().multiply(10);
+
+		}
+if(magnitude(f1) > 10){
+			f1 = a1.toUnitVector().multiply(10);
+
+		}if(magnitude(f2) > 10){
+			f2 = a1.toUnitVector().multiply(10);
+
+		}if(magnitude(f3) > 10){
+			f3 = a1.toUnitVector().multiply(10);
+
+		}
+		var xindex = x0i * 6;
 		dynamicsArray[xindex+3] = dynamicsArray[xindex+3] + f0.e(1);
 		dynamicsArray[xindex+4] = dynamicsArray[xindex+4] + f0.e(2);
 		dynamicsArray[xindex+5] = dynamicsArray[xindex+5] + f0.e(3);
 
-		var xindex = x1i * PROPERTIES_PER_AGENT;
+		var xindex = x1i * 6;
 		dynamicsArray[xindex+3] = dynamicsArray[xindex+3] + f1.e(1);
 		dynamicsArray[xindex+4] = dynamicsArray[xindex+4] + f1.e(2);
 		dynamicsArray[xindex+5] = dynamicsArray[xindex+5] + f1.e(3);
 
-		var xindex = x2i * PROPERTIES_PER_AGENT;
+		var xindex = x2i * 6;
 		dynamicsArray[xindex+3] = dynamicsArray[xindex+3] + f2.e(1);
 		dynamicsArray[xindex+4] = dynamicsArray[xindex+4] + f2.e(2);
 		dynamicsArray[xindex+5] = dynamicsArray[xindex+5] + f2.e(3);
 
-		var xindex = x3i * PROPERTIES_PER_AGENT;
+		var xindex = x3i * 6;
 		dynamicsArray[xindex+3] = dynamicsArray[xindex+3] + f3.e(1);
 		dynamicsArray[xindex+4] = dynamicsArray[xindex+4] + f3.e(2);
 		dynamicsArray[xindex+5] = dynamicsArray[xindex+5] + f3.e(3);
@@ -181,6 +206,24 @@ function calculateStateDynamics(a, t){
 	}
 	return dynamicsArray;
 }
+
+function force(objectindex, t, objectName, a){
+	var acceleration = $V([0, 0, 0]);
+	var amax = 10;
+	var ar = 10;
+	
+	if(objectName == 0 || objectName == 2){
+		acceleration = acceleration.add($V([0, -20.8, 0]));
+	}
+	
+
+	return acceleration;
+
+}
+
+
+
+
 
 function stateAddDynamics(a, d){
 	var s = new Array(ARRAY_SIZE);
@@ -242,9 +285,6 @@ function dynamicsMultScalar(a, scalar){
 }
 
 function verticeFaceBasicDetect(pos1, pos2, face){
-	if(pos2.e(2) <= -100){
-		console.log('uh huh');
-	}
 	var anchor = vertices[face.vertices[0]].p;
 	var a1 = anchor;
 	var a3 = vertices[face.vertices[1]].p;
@@ -319,8 +359,13 @@ function verticeFaceFullDetect(xHit, face){
 
 }
 
-function bounceAway(v, planeNormal){
-	var ELASTIC_COEFFICIENT = .8;
+function bounceAway(v, planeNormal, t){
+		var ELASTIC_COEFFICIENT = .8;
+
+	if(t){
+	var ELASTIC_COEFFICIENT = 1;
+
+	}
 
 	var normalVel = v.dot(planeNormal);
 	normalVel = planeNormal.multiply(normalVel);
@@ -333,12 +378,39 @@ function bounceAway(v, planeNormal){
 	return finalVel;
 }
 
+
+
+function sanityChecks(p1, p2, q1, q2){
+	if (p1.e(1) < q1.e(1) && p2.e(1) < q2.e(1) && p1.e(1) < q2.e(1) && p2.e(1) < q1.e(1)){
+		return false;
+	}
+
+	if(p1.e(2) < q1.e(2) && p2.e(2) < q2.e(2) && p1.e(2) < q2.e(2) && p2.e(2) < q1.e(2)){
+		return false;		
+	}
+	if(p1.e(3) < q1.e(3) && p2.e(3) < q2.e(3) && p1.e(3) < q2.e(3) && p2.e(3) < q1.e(3)){
+		return false;		
+	}
+
+	if (p1.e(1) > q1.e(1) && p2.e(1) > q2.e(1) && p1.e(1) > q2.e(1) && p2.e(1) > q1.e(1)){
+		return false;
+	}
+
+	if(p1.e(2) > q1.e(2) && p2.e(2) > q2.e(2) && p1.e(2) > q2.e(2) && p2.e(2) > q1.e(2)){
+		return false;		
+	}
+	if(p1.e(3) > q1.e(3) && p2.e(3) > q2.e(3) && p1.e(3) > q2.e(3) && p2.e(3) > q1.e(3)){
+		return false;		
+	}
+	return true;
+}
+
 function detectCollisions(s, snew, h, t){
 	//for all vertices try each face
 	var collisions = [];
 	for(var i = 0; i < vertices.length; i++){
 		for(var j = 0; j < faces.length; j++){
-			if(vertices[i].pType == 0){
+			if(vertices[i].pType == 2){
 				var arrayIndex = i * PROPERTIES_PER_AGENT;
 
 				var p = $V([s[arrayIndex], s[arrayIndex+1], s[arrayIndex+2]]);
@@ -372,6 +444,110 @@ function detectCollisions(s, snew, h, t){
 		}
 		//if 'easy collision' do full collision test
 	}
+
+
+
+	for(var i = 0; i < edges.length; i++){
+		var p1 = vertices[edges[i].start].p;
+		var p2 = vertices[edges[i].end].p;
+		for (var j = 0; j < edges.length; j++){
+			if(i != j){
+				var q1 = vertices[edges[j].start].p;
+				var q2 = vertices[edges[j].end].p;
+				var a = p2.subtract(p1);
+				var b = q2.subtract(q1);
+				var ahat = a.toUnitVector();
+				var bhat = b.toUnitVector();
+				var n = q2.subtract(q1).cross(p2.subtract(p1)).toUnitVector();
+				var r = q1.subtract(p1);
+				var s = (r.dot(bhat.cross(n)))/(a.dot(bhat.cross(n)))
+				var t = r.multiply(-1).dot(ahat.cross(n))/(b.dot(ahat.cross(n)));
+				var pa = p1.add(a.multiply(s));
+				var qa = q1.add(b.multiply(t));
+
+				var m = qa.subtract(pa);
+			
+					if(edgeColMatrix[i][j] == undefined){
+						edgeColMatrix[i][j] = m;
+					}else{
+						if (edgeColMatrix[i][j].dot(m) < 0){
+							if(sanityChecks(p1, p2, q1, q2)){
+
+								//super simple collisions are handles like point-face
+								//and i only allow dyanmic:static collisions
+								if(vertices[edges[i].start].pType == 0 || vertices[edges[i].start].pType == 2 || vertices[edges[i].start].pType == 3){
+									var p1v = vertices[edges[i].start].v;
+									var p2v = vertices[edges[i].end].v;
+									//ADD MASS YOU PROCSTINATING BLERG HEAD!
+									var p1vadd = bounceAway(p1v, n).multiply(1);
+									var p2vadd = bounceAway(p2v, n).multiply(1);
+									var p1i = edges[i].start * PROPERTIES_PER_AGENT;
+									var p2i = edges[i].end * PROPERTIES_PER_AGENT;
+
+
+									var p1npos = p1.add(p1vadd);
+									var p2npos = p2.add(p2vadd);
+
+									snew[p1i] = p1npos.e(1);
+									snew[p1i+1] = p1npos.e(2);
+									snew[p1i+2] = p1npos.e(3);
+									snew[p1i+3] = p1vadd.e(1);
+									snew[p1i+4] = p1vadd.e(2);
+									snew[p1i+5] = p1vadd.e(3);
+
+									snew[p2i] = p2npos.e(1);
+									snew[p2i+1] = p2npos.e(2);
+									snew[p2i+2] = p2npos.e(3);
+									snew[p2i+3] = p2vadd.e(1);
+									snew[p2i+4] = p2vadd.e(2);
+									snew[p2i+5] = p2vadd.e(3);
+
+								}else if (vertices[edges[j].start].pType == 0 || vertices[edges[j].start].pType == 2 || vertices[edges[j].start].pType == 3){
+									var q1v = vertices[edges[j].start].v;
+									var q2v = vertices[edges[j].end].v;
+									//ADD MASS YOU PROCSTINATING BLERG HEAD!
+									var q1vadd = bounceAway(q1v, n).multiply(1/7);
+									var q2vadd = bounceAway(q2v, n).multiply(1/7);
+									var q1i = edges[j].start * PROPERTIES_PER_AGENT;
+									var q2i = edges[j].end * PROPERTIES_PER_AGENT;
+
+
+									var q1npos = q1.add(q1vadd);
+									var q2npos = q2.add(q2vadd);
+
+									snew[q1i] = q1npos.e(1);
+									snew[q1i+1] = q1npos.e(2);
+									snew[q1i+2] = q1npos.e(3);
+									snew[q1i+3] = q1vadd.e(1);
+									snew[q1i+4] = q1vadd.e(2);
+									snew[q1i+5] = q1vadd.e(3);
+
+									snew[q2i] = q2npos.e(1);
+									snew[q2i+1] = q2npos.e(2);
+									snew[q2i+2] = q2npos.e(3);
+									snew[q2i+3] = q2vadd.e(1);
+									snew[q2i+4] = q2vadd.e(2);
+									snew[q2i+5] = q2vadd.e(3);
+								}
+
+
+							collisions.push({});
+												edgeColMatrix[i][j] = undefined;
+
+							console.log('edge edge yo')
+						}else{
+							edgeColMatrix[i][j] = m;
+
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+
+
 	return collisions;
 	//for each edge try each edge 
 }
@@ -390,10 +566,9 @@ function rungeKutta(stateVector, stateVectorForced, timestep, t, forceFunction){
 
 	 }
 	//collision detect with prek2
-	var collisions = []
-	//detectCollisions(stateVector, prek2, timestep), t;
+	var collisions = detectCollisions(stateVector, prek2, timestep);
 
-	if(collisions.length < 1){
+	if(collisions.length < 1 && runge){
 
 		var k2 = forceFunction(prek2, (t+(timestep/2.0)));
 
@@ -411,8 +586,29 @@ function rungeKutta(stateVector, stateVectorForced, timestep, t, forceFunction){
 		kadds = dynamicsAddDynamics(kadds, k32);
 		kadds = dynamicsAddDynamics(kadds, k4);
 		kadds = dynamicsMultScalar(kadds, (timestep/6.0));
+		/*//minimize kadds
+		for (i = 0; i < NUMBER_OF_POINTS; i++){
+			var objectindex = i*PROPERTIES_PER_AGENT;
+			var dynamicsIndex = i*6;
+			var v = $V([kadds[dynamicsIndex], kadds[dynamicsIndex+1], kadds[dynamicsIndex+2]])
+			var a = $V([kadds[dynamicsIndex+3], kadds[dynamicsIndex+4], kadds[dynamicsIndex+5]])
+			if(magnitude(v) > 5){
+				v = v.toUnitVector().multiply(5);
+			}
+			if(magnitude(a) > 2){
+				a = a.toUnitVector().multiply(2);
+			}
 
 
+			kadds[dynamicsIndex] = v.e(1);
+			kadds[dynamicsIndex+1] = v.e(2);
+			kadds[dynamicsIndex+2] = v.e(3);
+			
+			kadds[dynamicsIndex+3] = a.e(1);
+			kadds[dynamicsIndex+4] = a.e(2);
+			kadds[dynamicsIndex+5] = a.e(3);
+
+		}*/
 
 		var sNew = stateAddDynamics(stateVector, kadds);
 
@@ -435,24 +631,6 @@ function rungeKutta(stateVector, stateVectorForced, timestep, t, forceFunction){
 
 
 }
-
-function force(objectindex, t, objectName, a){
-	var acceleration = $V([0, 0, 0]);
-	var amax = 10;
-	var ar = 10;
-	
-	if(objectName == 0){
-	//	acceleration = acceleration.add($V([0, -9.8, 0]));
-	}
-	
-
-	return acceleration;
-
-}
-
-
-
-
 
 
 

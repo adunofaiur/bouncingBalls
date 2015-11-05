@@ -89,6 +89,9 @@ font-size: 22px;
 	line-height: 32px;
 
 }
+.active{
+		color: #72BCD4;
+}
 .force{
 	display: flex;
 	justify-content: space-between;

@@ -2,7 +2,7 @@ var renderer, cube, sphere, scene, camere, points, colors = [], pMaterial, pGeo;
 
 var timeStep = 100;
 var isplaying =  false;
-var FRICTION_COEFFICIENT = .2;
+var FRICTION_COEFFICIENT = .1;
 var AIR_RESISTANCE = .1;
 var pSize = [];
 var pOpacity = [];
@@ -18,15 +18,17 @@ var awingFighter;
 var awing;
 var sphere;
 var splosion;
-
+var runge = true;
 var objects = [];
 var struts = [];
 var vertices = [];
 var faces = [];
-var cube, cube2;
+var cube, cube2, cube3;
 var edges = [];
 var plane;
 var torsions =[];
+var sphere;
+var tface;
 function buildDiv(className){
 	var elem = document.createElement('div');
 	elem.className = className;
@@ -71,10 +73,12 @@ function setupGeometries(){
 	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
 	egh.material.linewidth = 2;
 	//scene.add( egh );	
-
-
-
-
+var material2 = new THREE.LineBasicMaterial({ color: 0x0000ff });
+var material3 = new THREE.LineBasicMaterial({ color: 0xff00ff });
+var geometry2 = new THREE.Geometry();
+var geometry3 = new THREE.Geometry();
+ cube2 = new THREE.Line( geometry2, material2 ); scene.add( cube2 );
+ cube3 = new THREE.Line( geometry3, material3 ); scene.add( cube3 );
 	var cubeGeometry = new THREE.Geometry();
 	var cubeMaterials = new THREE.MeshLambertMaterial({ transparent: true ,color: 0x00ffff, opacity: 1, wireframe: true});
 	
@@ -87,6 +91,18 @@ function setupGeometries(){
 	scene.add(camera);
 
 	scene.add(cube);
+
+var fm = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true });
+var fg = new THREE.Geometry();
+tface = new THREE.Mesh(fg, fm);
+scene.add(tface);
+	var geometry = new THREE.SphereGeometry( 1, 32, 32 );
+	var material = new THREE.MeshBasicMaterial( {color: 0x00ffff} );
+    sphere = new THREE.Mesh( geometry, material );
+//	scene.add( sphere );
+
+
+
 	camera.lookAt(cube.position);
 	var  controls = new THREE.OrbitControls(camera, renderer.domElement)
 	var skyboxGeometry = new THREE.CubeGeometry(10000, 10000, 10000);
@@ -129,6 +145,16 @@ function Mesh(points, edges, struts, props, faces){
 	this.faces = faces;
 }
 
+//
+/*
+
+0 - non-springy, gravity affects
+1 - non-springy, gravity does not affect
+2 - springy, no gravity
+3 - springy, with gravity
+
+*/
+
 function Vertice(p, type, r){
 	this.struts = [];
 	this.p = p;
@@ -165,17 +191,22 @@ Vertice.prototype.fromArray = function(array, index){
 
 }
 
-function Face(struts, angels, vertices){
-	this.struts = struts;
-	this.angles = angels;
-	
+function Face(vertices){
+	this.vertices = vertices;	
 }
-function Strut(vertices, faces){
+function Strut(vertices, faces, l){
 	this.vertices = vertices;
 	this.faces = faces;
-	this.k = 11.1;
-	this.d = 2.8;
-	this.l = 70.7;
+	this.k = 100;
+	this.d = 1;
+	if(!l){
+		this.l = 100;
+	}else{
+			this.l = l;
+
+	}
+
+
 }
 function Edge(start, end){
 	this.start = start;
@@ -186,25 +217,182 @@ function Torsion(x0, x1, x2, x3, rest){
 	this.x0 = x0;
 	this.x1 = x1;
 	this.rest = rest;
-	this.k = 1000;
-	this.d = 500;
+	this.k = 200;
+	this.d = 100;
 	this.x2 = x2;
 	this.x3 = x3;
 }
-
+var edgeColMatrix;
 function setupData(properties){
 	
-	var pOut = $V([-50, 0, 0]);
-	cube.geometry.vertices.push(new THREE.Vector3( -50,  0, 0 ));
-	var pUp = $V([0, 0, -50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 0,  0, -50 ));
 
-	var pRight = $V([50, 10, 0]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  0, 0 ));
+	
+	var h0 = $V([50, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
+	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
+	var g1 = $V([50, 50, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, -50 ));
+	vertices.push(new Vertice(g1, 0, cube.geometry.vertices[1]))
+	var f4 = $V([-50, 50, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( -50,  50, -50 ));
+	vertices.push(new Vertice(f4, 0, cube.geometry.vertices[2]))
+	var e5 = $V([-50, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( -50,  50, 50 ));
+	vertices.push(new Vertice(e5, 0, cube.geometry.vertices[3]))
+	cube.geometry.faces.push( new THREE.Face3( 0, 1, 2) );
+	cube.geometry.faces.push( new THREE.Face3( 0, 2, 3) );
+	edges.push(new Edge(0, 1));
+	edges.push(new Edge(1, 2));
+	edges.push(new Edge(2, 3));
+	edges.push(new Edge(3, 0));
+	var d2 = $V([50, -50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  -50, 50 ));
+	vertices.push(new Vertice(d2, 0, cube.geometry.vertices[4]))
+	var a7 = $V([-50, -50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( -50,  -50, 50 ));
+	vertices.push(new Vertice(a7, 0, cube.geometry.vertices[5]))
+	cube.geometry.faces.push( new THREE.Face3( 0, 3, 4) );
+	cube.geometry.faces.push( new THREE.Face3( 3, 5, 4) );
+	edges.push(new Edge(3, 5));
+	edges.push(new Edge(5, 4));
+	edges.push(new Edge(0, 4));
+	var c3 = $V([50, -50, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  -50, -50 ));
+	vertices.push(new Vertice(c3, 0, cube.geometry.vertices[6]))
+	edges.push(new Edge(4, 6));
+	edges.push(new Edge(1, 6));
+	cube.geometry.faces.push( new THREE.Face3( 0, 4, 6 ));
+	cube.geometry.faces.push( new THREE.Face3( 0, 6, 1) );
+	var b6 = $V([-50, -50, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( -50,  -50, -50 ));
+	vertices.push(new Vertice(b6, 0, cube.geometry.vertices[7]))
+	edges.push(new Edge(6, 7));
+	edges.push(new Edge(7, 2));
+	cube.geometry.faces.push( new THREE.Face3( 6, 7, 1 ));
+	cube.geometry.faces.push( new THREE.Face3( 1,7, 2) );
+	edges.push(new Edge(5, 7));
+	cube.geometry.faces.push( new THREE.Face3( 5, 7, 2 ));
+	cube.geometry.faces.push( new THREE.Face3( 5,7, 3) );
 
-	var PDown = $V([0, 0, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 0,  0, 50 ));
 
+
+
+	faces.push(new Face([0, 1, 2, 3]));
+	faces.push(new Face([0, 1, 6, 4]));
+	faces.push(new Face([5, 7, 2, 3]));
+	faces.push(new Face([1, 2, 7, 6]));
+	faces.push(new Face([0, 3, 5, 4]));
+	faces.push(new Face([5, 7, 4, 6]));
+
+	struts.push(new Strut([7, 4], 141));
+	struts.push(new Strut([5, 6], 141));
+	struts.push(new Strut([3, 4], 141));
+	struts.push(new Strut([5, 0], 141));
+	struts.push(new Strut([1, 4], 141));
+	struts.push(new Strut([6, 0], 141));
+	struts.push(new Strut([6, 2], 141));
+	struts.push(new Strut([7, 1], 141));
+	struts.push(new Strut([5, 2], 141));
+	struts.push(new Strut([7, 3], 141));
+	struts.push(new Strut([0, 2], 141));
+	struts.push(new Strut([1, 3], 141));
+
+	struts.push(new Strut([0, 3]));
+	struts.push(new Strut([0, 1]));
+	struts.push(new Strut([2, 1]));
+	struts.push(new Strut([2, 3]));
+
+	struts.push(new Strut([7, 6]));
+	struts.push(new Strut([6, 4]));
+	struts.push(new Strut([5, 4]));
+	struts.push(new Strut([7, 5]));
+
+	struts.push(new Strut([1, 6]));
+	struts.push(new Strut([0, 4]));
+	
+	struts.push(new Strut([5, 3]));
+	struts.push(new Strut([7, 2]));
+
+	var p0 = $V([-201,-0, 0]);
+	var p1 = $V([200, -250, 3]);
+
+	cube2.geometry.vertices.push(new THREE.Vector3(-201, -0, 1));
+	cube2.geometry.vertices.push(new THREE.Vector3(200, -250, 0));
+	vertices.push(new Vertice(p0, 1, cube2.geometry.vertices[0]));
+	vertices.push(new Vertice(p1, 1, cube2.geometry.vertices[1]));
+
+	edges.push(new Edge(8, 9));
+	
+	
+
+
+
+
+	var t1 = $V([0, 75, 0]);
+	var t2 = $V([0, 125, 0]);
+	var t3 = $V([50, 75, 0]);
+	var t4 = $V([0, 75, 50]);
+	tface.geometry.vertices.push(new THREE.Vector3(0, 75, 0));
+	tface.geometry.vertices.push(new THREE.Vector3(0, 125, 0));
+	tface.geometry.vertices.push(new THREE.Vector3(50, 75, 0));
+	tface.geometry.vertices.push(new THREE.Vector3(0, 75, 50));
+	tface.geometry.faces.push( new THREE.Face3( 0, 1, 2) );
+	tface.geometry.faces.push( new THREE.Face3( 0, 1, 3) );
+
+	vertices.push(new Vertice(t1, 1, tface.geometry.vertices[0]));
+	vertices.push(new Vertice(t2, 1, tface.geometry.vertices[1]));
+	vertices.push(new Vertice(t3, 1, tface.geometry.vertices[2]));
+	vertices.push(new Vertice(t4, 1, tface.geometry.vertices[3]));
+
+	struts.push(new Strut([10, 11], 50));
+	struts.push(new Strut([11, 12]));
+	struts.push(new Strut([11, 13]));
+	struts.push(new Strut([12, 10], 50));
+	struts.push(new Strut([13, 10], 50));
+
+	torsions.push(new Torsion(10, 11, 12, 13, Math.PI/4));
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+	var h0 = $V([50, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
+	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
+
+	var h0 = $V([50, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
+	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
+
+
+	var h0 = $V([50, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
+	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
+
+	var h0 = $V([50, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
+	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
+
+
+	var h0 = $V([50, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
+	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
+
+	var h0 = $V([50, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
+	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
+
+*/
+
+/*
 	vertices.push(new Vertice(pOut, 0, cube.geometry.vertices[0]))
 	vertices.push(new Vertice(pUp, 0, cube.geometry.vertices[1]))
 	vertices.push(new Vertice(pRight, 0, cube.geometry.vertices[2]))
@@ -215,25 +403,66 @@ function setupData(properties){
 	var s1 = new Strut([0, 1]);
 	var s2 = new Strut([1, 2]);
 
-	var s3 = new Strut([2, 0]);
+	var s3 = new Strut([0, 2]);
 	var s4 = new Strut([0, 3]);
 	var s5 = new Strut([3, 2]);
 	struts.push(s1);
-		struts.push(s2);
+	struts.push(s2);
 	struts.push(s3);
 	struts.push(s4);
 	struts.push(s5);
 
 	var face1 = new Face([s1, s2, s3], [Math.PI/4, Math.PI/2, Math.PI/4], [0, 1, 2]);
+	face1.vertices = [0, 1, 2];
+	face1.pType = 1;
 	var face2 = new Face([s3, s4, s5], [Math.PI/4, Math.PI/4, Math.PI/2], [0, 2, 3]);
-
+	face2.vertices = [0, 2, 3];
+	face2.pType = 1;
 	faces.push(face1);
 	faces.push(face2);
 	var t1 = new Torsion(0, 2, 1, 3, (Math.PI/4));
 	torsions.push(t1);
 	cube.geometry.faces.push( new THREE.Face3( 0, 1, 2) );
 	cube.geometry.faces.push( new THREE.Face3( 0, 2, 3) );
+*/
 
+
+//edge edge test
+	/*
+	var p0 = $V([-20, 5, 0]);
+	var p1 = $V([20, 8, 3]);
+	cube2.geometry.vertices.push(new THREE.Vector3(-20, 5, 0));
+	cube2.geometry.vertices.push(new THREE.Vector3(20, 8, 3));
+
+	var p2 = $V([0, 2, -20]);
+	var p3 = $V([-3, 2, 20]);
+
+
+
+
+	cube3.geometry.vertices.push(new THREE.Vector3(0, 2, -20));
+	cube3.geometry.vertices.push(new THREE.Vector3(-3, 2, 20));
+	vertices.push(new Vertice(p0, 0, cube2.geometry.vertices[0]));
+	vertices.push(new Vertice(p1, 0, cube2.geometry.vertices[1]));
+	vertices.push(new Vertice(p2, 1, cube3.geometry.vertices[0]));
+	vertices.push(new Vertice(p3, 1, cube3.geometry.vertices[1]));
+
+	edges.push(new Edge(0, 1));
+	edges.push(new Edge(2, 3));
+*/
+
+
+//isolated spring
+/*
+
+	var p0 = $V([-20, 5, 0]);
+	var p1 = $V([20, 8, 3]);
+	cube2.geometry.vertices.push(new THREE.Vector3(-20, 5, 0));
+	cube2.geometry.vertices.push(new THREE.Vector3(20, 8, 3));
+
+	vertices.push(new Vertice(p0, 1, cube2.geometry.vertices[0]));
+	vertices.push(new Vertice(p1, 1, cube2.geometry.vertices[1]));
+	struts.push(new Strut([0, 1]));*/
 	//setup the vertices of a cube at 0 0 0 that has points on the lines of 50
 	
 	/*for(var i = 0; i  < 8; i++){
@@ -341,8 +570,19 @@ vertices.push(new Vertice(p3, $V([0, 0, 0]), 1, plane.geometry.vertices[2], 2));
 	faces.push(new Face([], [], [4+indexForCube2, 6+indexForCube2, 7+indexForCube2, 5+indexForCube2]));
 	faces.push(new Face([], [], [4+indexForCube2, 5+indexForCube2, 0+indexForCube2, 1+indexForCube2]));
 	faces.push(new Face([], [], [7+indexForCube2, 6+indexForCube2, 3+indexForCube2, 2+indexForCube2]));*/
+	edgeColMatrix = [];
+	for(var i = 0; i < edges.length; i++){
+		var c = [];
 
-
+		for(var j = 0; j < edges.length; j++){
+			if(i == j){
+				c.push(undefined);
+			}else{
+				c.push(undefined)
+			}
+		}
+		edgeColMatrix.push(c);
+	}
 
 }
 
@@ -405,7 +645,9 @@ function mainLoop(){
 		    		vertices[j].toArray(stateArray, (j*PROPERTIES_PER_AGENT));
 		    	}
 		    	var sdot = calculateStateDynamics(stateArray, stateTime);
-		    	var newStateArray = rungeKutta(stateArray, sdot, (timeStep/1000), stateTime, calculateStateDynamics);
+		    	var newStateArray;
+		    		newStateArray = rungeKutta(stateArray, sdot, (timeStep/1000), stateTime, calculateStateDynamics);
+		    	
 
 
 		    	/*calculateStateDynamics(stateTime);
@@ -435,6 +677,9 @@ function mainLoop(){
 		    	vertices[i].rendering.y = vertices[i].p.e(2);
 		    	vertices[i].rendering.z = vertices[i].p.e(3);
 		    	cube.geometry.verticesNeedUpdate = true;
+		    	cube2.geometry.verticesNeedUpdate = true;
+		    	cube3.geometry.verticesNeedUpdate = true;
+		    	tface.geometry.verticesNeedUpdate = true;
 
 		    }
 	    }else{
@@ -451,38 +696,46 @@ function mainLoop(){
 		var pauseButton = $('#pausebutton')[0];
 
 	playButton.addEventListener('click', function(event){
-		if($(playButton).hasClass('grayed')){
+		if($(playButton).hasClass('active')){
 			return;
 		}
 		isplaying = true;
 		d = new Date();
-		$(playButton).addClass('grayed');
-		$(pauseButton).removeClass('grayed');
-		$(resetButton).removeClass('grayed');
+		$(playButton).addClass('active');
+		$(pauseButton).removeClass('active');
 
 		preFrameTime = d.getTime();
 		render();
 	})
 	var pauseButton = $('#pausebutton')[0];
 	pauseButton.addEventListener('click', function(event){
-		if($(pauseButton).hasClass('grayed')){
+		if($(pauseButton).hasClass('active')){
 			return;
 		}
-		$(pauseButton).addClass('grayed');
-				$(playButton).removeClass('grayed');
+				$(playButton).removeClass('active');
 
 		isplaying = false;
 	})
-	var resetButton = $('#resetbutton')[0];
-	resetButton.addEventListener('click', function(event){
-		if($(resetButton).hasClass('grayed')){
+	var eu = $('#euler')[0];
+	eu.addEventListener('click', function(event){
+		if($(eu).hasClass('active')){
 			return;
 		}
-		simState = resetSim(simState);
-				d = new Date();
+		runge = false;
+		$(eu).addClass('active');
+		$(rk).removeClass('active');
 
-		preFrameTime = d.getTime();
-		render();
+	})
+
+	var rk = $('#rk')[0];
+	rk.addEventListener('click', function(event){
+		if($(rk).hasClass('active')){
+			return;
+		}
+		runge = true;
+		$(rk).addClass('active');
+		$(eu).removeClass('active');
+
 
 	})
    render();
