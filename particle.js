@@ -339,6 +339,20 @@ function sanityChecks(p1, p2, q1, q2){
 	return true;
 }
 
+function bestGuessXHit(s, snew, plane, h, t){
+	for(var i = 2; i < 5; i++){
+		var tslice = h/i;
+		var firstDynamics = calculateStateDynamics(s, t);
+		var firstHalfState = rungeKutta(s, firstDynamics, (1000*tslice), t, calculateStateDynamics);
+		var secondDynamics = calculateStateDynamics(s, (t+tslice));
+		var secondHalfState = rungeKutta(firstHalfState, secondDynamics, (1000*tslice), (t+tslice), calculateStateDynamics);
+		var firstCol = detectCollisions(s, firstHalfState, (tslice*1000), t);
+		var secondCol = detectCollisions(firstHalfState, secondHalfState, (tslice*1000), (t+tslice));
+		console.log(firstCol.length);
+		console.log(secondCol.length);
+
+	}
+}
 function detectCollisions(s, snew, h, t){
 	//for all vertices try each face
 	var collisions = [];
@@ -377,8 +391,9 @@ function detectCollisions(s, snew, h, t){
 				//	var velFract = collisionVelocity.multiply((1-(ts/h))).multiply(h/2);
 					//var velFract = collisionVelocity.multiply(1).multiply(h/2);
 				//	var newPos = xHit.add(velFract)
+				bestGuessXHit(s, snew, null, h, t);
 				/*	console.log('log here');
-
+					
 					snew[arrayIndex] = newPos.e(1);
 					snew[arrayIndex+1] = newPos.e(2);
 					snew[arrayIndex+2] = newPos.e(3);
@@ -518,7 +533,7 @@ function rungeKutta(stateVector, stateVectorForced, timestep, t, forceFunction){
 	//return prek2;
 
 	//collision detect with prek2
-	var collisions = detectCollisions(stateVector, prek2, timestep);
+	var collisions = detectCollisions(stateVector, prek2, timestep, t);
 	if(collisions.length > 1 ){
 		console.log('fucking wrecked mate');
 	}
