@@ -29,6 +29,8 @@ var plane;
 var torsions =[];
 var sphere;
 var tface;
+var canonicalArray;
+var myBody;
 function buildDiv(className){
 	var elem = document.createElement('div');
 	elem.className = className;
@@ -73,11 +75,14 @@ function setupGeometries(){
 	var egh = new THREE.EdgesHelper( cube, 0x00ffff );
 	egh.material.linewidth = 2;
 	//scene.add( egh );	
-var material2 = new THREE.LineBasicMaterial({ color: 0x0000ff });
+var material2 = new THREE.MeshLambertMaterial({color: 0x0000ff, opacity: 1, wireframe: false, wireframecolor: 0x0000ff});
 var material3 = new THREE.LineBasicMaterial({ color: 0xff00ff });
-var geometry2 = new THREE.Geometry();
+var geometry2 = new THREE.BoxGeometry(20, 20, 20);
 var geometry3 = new THREE.Geometry();
- cube2 = new THREE.Line( geometry2, material2 ); scene.add( cube2 );
+ cube2 = new THREE.Mesh( geometry2, material2 ); scene.add( cube2 );
+ 	var egh2 = new THREE.EdgesHelper( cube2, 0x00ffff );
+	egh2.material.linewidth = 2;
+
  cube3 = new THREE.Line( geometry3, material3 ); scene.add( cube3 );
 	var cubeGeometry = new THREE.Geometry();
 	var cubeMaterials = new THREE.MeshLambertMaterial({ transparent: true ,color: 0x00ffff, opacity: 1, wireframe: true});
@@ -227,45 +232,45 @@ function setupData(properties){
 	
 
 	
-	var h0 = $V([50, 50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
-	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
-	var g1 = $V([50, 50, -50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, -50 ));
-	vertices.push(new Vertice(g1, 0, cube.geometry.vertices[1]))
-	var f4 = $V([-50, 50, -50]);
-	cube.geometry.vertices.push(new THREE.Vector3( -50,  50, -50 ));
-	vertices.push(new Vertice(f4, 0, cube.geometry.vertices[2]))
-	var e5 = $V([-50, 50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( -50,  50, 50 ));
-	vertices.push(new Vertice(e5, 0, cube.geometry.vertices[3]))
+	var h0 = $V([0, 50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 0,  50, 50 ));
+	vertices.push(new Vertice(h0, 1, cube.geometry.vertices[0]))
+	var g1 = $V([0, 50, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 0,  50, -50 ));
+	vertices.push(new Vertice(g1, 1, cube.geometry.vertices[1]))
+	var f4 = $V([-50, 0, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( -50,  0, -50 ));
+	vertices.push(new Vertice(f4, 1, cube.geometry.vertices[2]))
+	var e5 = $V([-50, 0, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( -50,  0, 50 ));
+	vertices.push(new Vertice(e5, 1, cube.geometry.vertices[3]))
 	cube.geometry.faces.push( new THREE.Face3( 0, 1, 2) );
 	cube.geometry.faces.push( new THREE.Face3( 0, 2, 3) );
 	edges.push(new Edge(0, 1));
 	edges.push(new Edge(1, 2));
 	edges.push(new Edge(2, 3));
 	edges.push(new Edge(3, 0));
-	var d2 = $V([50, -50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  -50, 50 ));
-	vertices.push(new Vertice(d2, 0, cube.geometry.vertices[4]))
-	var a7 = $V([-50, -50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( -50,  -50, 50 ));
-	vertices.push(new Vertice(a7, 0, cube.geometry.vertices[5]))
+	var d2 = $V([50, -0, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  -0, 50 ));
+	vertices.push(new Vertice(d2, 1, cube.geometry.vertices[4]))
+	var a7 = $V([-0, -50, 50]);
+	cube.geometry.vertices.push(new THREE.Vector3( -0,  -50, 50 ));
+	vertices.push(new Vertice(a7, 1, cube.geometry.vertices[5]))
 	cube.geometry.faces.push( new THREE.Face3( 0, 3, 4) );
 	cube.geometry.faces.push( new THREE.Face3( 3, 5, 4) );
 	edges.push(new Edge(3, 5));
 	edges.push(new Edge(5, 4));
 	edges.push(new Edge(0, 4));
-	var c3 = $V([50, -50, -50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  -50, -50 ));
-	vertices.push(new Vertice(c3, 0, cube.geometry.vertices[6]))
+	var c3 = $V([50, -0, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( 50,  -0, -50 ));
+	vertices.push(new Vertice(c3, 1, cube.geometry.vertices[6]))
 	edges.push(new Edge(4, 6));
 	edges.push(new Edge(1, 6));
 	cube.geometry.faces.push( new THREE.Face3( 0, 4, 6 ));
 	cube.geometry.faces.push( new THREE.Face3( 0, 6, 1) );
-	var b6 = $V([-50, -50, -50]);
-	cube.geometry.vertices.push(new THREE.Vector3( -50,  -50, -50 ));
-	vertices.push(new Vertice(b6, 0, cube.geometry.vertices[7]))
+	var b6 = $V([-0, -50, -50]);
+	cube.geometry.vertices.push(new THREE.Vector3( -0,  -50, -50 ));
+	vertices.push(new Vertice(b6, 1, cube.geometry.vertices[7]))
 	edges.push(new Edge(6, 7));
 	edges.push(new Edge(7, 2));
 	cube.geometry.faces.push( new THREE.Face3( 6, 7, 1 ));
@@ -274,302 +279,81 @@ function setupData(properties){
 	cube.geometry.faces.push( new THREE.Face3( 5, 7, 2 ));
 	cube.geometry.faces.push( new THREE.Face3( 5,7, 3) );
 
-
-
-
-	faces.push(new Face([0, 1, 2, 3]));
-	faces.push(new Face([0, 1, 6, 4]));
-	faces.push(new Face([5, 7, 2, 3]));
-	faces.push(new Face([1, 2, 7, 6]));
 	faces.push(new Face([0, 3, 5, 4]));
-	faces.push(new Face([5, 7, 4, 6]));
+	faces.push(new Face([6, 0, 4, 7]));
+	faces.push(new Face([1, 6, 7, 2]));
+	faces.push(new Face([6, 4, 5, 7]));
+	faces.push(new Face([3, 2, 7, 5]));
+	faces.push(new Face([1, 0, 4, 6]));
 
-	struts.push(new Strut([7, 4], 141));
-	struts.push(new Strut([5, 6], 141));
-	struts.push(new Strut([3, 4], 141));
-	struts.push(new Strut([5, 0], 141));
-	struts.push(new Strut([1, 4], 141));
-	struts.push(new Strut([6, 0], 141));
-	struts.push(new Strut([6, 2], 141));
-	struts.push(new Strut([7, 1], 141));
-	struts.push(new Strut([5, 2], 141));
-	struts.push(new Strut([7, 3], 141));
-	struts.push(new Strut([0, 2], 141));
-	struts.push(new Strut([1, 3], 141));
 
-	struts.push(new Strut([0, 3]));
-	struts.push(new Strut([0, 1]));
-	struts.push(new Strut([2, 1]));
-	struts.push(new Strut([2, 3]));
 
-	struts.push(new Strut([7, 6]));
-	struts.push(new Strut([6, 4]));
-	struts.push(new Strut([5, 4]));
-	struts.push(new Strut([7, 5]));
+//mini box
 
-	struts.push(new Strut([1, 6]));
-	struts.push(new Strut([0, 4]));
 	
-	struts.push(new Strut([5, 3]));
-	struts.push(new Strut([7, 2]));
-
-	var p0 = $V([-201,-0, 0]);
-	var p1 = $V([200, -250, 3]);
-
-	cube2.geometry.vertices.push(new THREE.Vector3(-201, -0, 1));
-	cube2.geometry.vertices.push(new THREE.Vector3(200, -250, 0));
-	vertices.push(new Vertice(p0, 1, cube2.geometry.vertices[0]));
-	vertices.push(new Vertice(p1, 1, cube2.geometry.vertices[1]));
-
+	var h02 = $V([10, 10, 10]);
+	//cube2.geometry.vertices.push(new THREE.Vector3( 10,  10, 10 ));
+	vertices.push(new Vertice(h02, 0, cube2.geometry.vertices[0]))
+	var g12 = $V([10, 10, -10]);
+	//cube2.geometry.vertices.push(new THREE.Vector3( 10,  10, -10 ));
+	vertices.push(new Vertice(g12, 0, cube2.geometry.vertices[1]))
+	var f42 = $V([-10, 10, -10]);
+//	cube2.geometry.vertices.push(new THREE.Vector3( -10,  10, -10 ));
+	vertices.push(new Vertice(f42, 0, cube2.geometry.vertices[2]))
+	var e52 = $V([-10, 10, 10]);
+//	cube2.geometry.vertices.push(new THREE.Vector3( -10,  10, 10 ));
+	vertices.push(new Vertice(e52, 0, cube2.geometry.vertices[3]))
+	//cube2.geometry.faces.push( new THREE.Face3( 0, 1, 2) );
+	//cube2.geometry.faces.push( new THREE.Face3( 0, 2, 3) );
 	edges.push(new Edge(8, 9));
-	
-	
-
-
-
-
-	var t1 = $V([0, 75, 0]);
-	var t2 = $V([0, 125, 0]);
-	var t3 = $V([50, 75, 0]);
-	var t4 = $V([0, 75, 50]);
-	tface.geometry.vertices.push(new THREE.Vector3(0, 75, 0));
-	tface.geometry.vertices.push(new THREE.Vector3(0, 125, 0));
-	tface.geometry.vertices.push(new THREE.Vector3(50, 75, 0));
-	tface.geometry.vertices.push(new THREE.Vector3(0, 75, 50));
-	tface.geometry.faces.push( new THREE.Face3( 0, 1, 2) );
-	tface.geometry.faces.push( new THREE.Face3( 0, 1, 3) );
-
-	vertices.push(new Vertice(t1, 1, tface.geometry.vertices[0]));
-	vertices.push(new Vertice(t2, 1, tface.geometry.vertices[1]));
-	vertices.push(new Vertice(t3, 1, tface.geometry.vertices[2]));
-	vertices.push(new Vertice(t4, 1, tface.geometry.vertices[3]));
-
-	struts.push(new Strut([10, 11], 50));
-	struts.push(new Strut([11, 12]));
-	struts.push(new Strut([11, 13]));
-	struts.push(new Strut([12, 10], 50));
-	struts.push(new Strut([13, 10], 50));
-
-	torsions.push(new Torsion(10, 11, 12, 13, Math.PI/4));
-
-
-
-
-
-
-
-
-
-
-
-
+	edges.push(new Edge(9, 10));
+	edges.push(new Edge(10, 11));
+	edges.push(new Edge(11, 8));
+	var d22 = $V([10, -10, 10]);
+//	cube2.geometry.vertices.push(new THREE.Vector3( 10,  -10, 10 ));
+	vertices.push(new Vertice(d22, 0, cube2.geometry.vertices[4]))
+	var a72 = $V([-10, -10, 10]);
+//	cube2.geometry.vertices.push(new THREE.Vector3( -10,  -10, 10 ));
+	vertices.push(new Vertice(a72, 0, cube2.geometry.vertices[5]))
+	//cube2.geometry.faces.push( new THREE.Face3( 0, 3, 4) );
+	//cube2.geometry.faces.push( new THREE.Face3( 3, 5, 4) );
+	edges.push(new Edge(11, 13));
+	edges.push(new Edge(13, 12));
+	edges.push(new Edge(8, 12));
+	var c32 = $V([10, -10, -10]);
+//	cube2.geometry.vertices.push(new THREE.Vector3( 10,  -10, -10 ));
+	vertices.push(new Vertice(c32, 0, cube2.geometry.vertices[6]))
+	edges.push(new Edge(12, 14));
+	edges.push(new Edge(9, 14));
+//	cube2.geometry.faces.push( new THREE.Face3( 0, 4, 6 ));
+//	cube2.geometry.faces.push( new THREE.Face3( 0, 6, 1) );
+	var b62 = $V([-10, -10, -10]);
+//	cube2.geometry.vertices.push(new THREE.Vector3( -10,  -10, -10 ));
+	vertices.push(new Vertice(b62, 0, cube2.geometry.vertices[7]))
+	edges.push(new Edge(14, 15));
+	edges.push(new Edge(15, 10));
+	//cube2.geometry.faces.push( new THREE.Face3( 6, 7, 1 ));
+	//cube2.geometry.faces.push( new THREE.Face3( 1,7, 2) );
+	edges.push(new Edge(13, 15));
+	//cube2.geometry.faces.push( new THREE.Face3( 5, 7, 2 ));
+	//cube2.geometry.faces.push( new THREE.Face3( 5,7, 3) );
 /*
-	var h0 = $V([50, 50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
-	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
-
-	var h0 = $V([50, 50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
-	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
-
-
-	var h0 = $V([50, 50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
-	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
-
-	var h0 = $V([50, 50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
-	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
-
-
-	var h0 = $V([50, 50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
-	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
-
-	var h0 = $V([50, 50, 50]);
-	cube.geometry.vertices.push(new THREE.Vector3( 50,  50, 50 ));
-	vertices.push(new Vertice(h0, 0, cube.geometry.vertices[0]))
+	faces.push(new Face([8, 9, 10, 11]));
+	faces.push(new Face([8, 9, 14, 12]));
+	faces.push(new Face([13, 15, 10, 11]));
+	faces.push(new Face([9, 10, 15, 14]));
+	faces.push(new Face([8, 11, 13, 12]));
+	faces.push(new Face([13, 15, 12, 14]));
 
 */
-
-/*
-	vertices.push(new Vertice(pOut, 0, cube.geometry.vertices[0]))
-	vertices.push(new Vertice(pUp, 0, cube.geometry.vertices[1]))
-	vertices.push(new Vertice(pRight, 0, cube.geometry.vertices[2]))
-	vertices.push(new Vertice(PDown, 0, cube.geometry.vertices[3]))
-	var timec = 5;
-	var dc = 2.8;
-	var kc = 11.1;
-	var s1 = new Strut([0, 1]);
-	var s2 = new Strut([1, 2]);
-
-	var s3 = new Strut([0, 2]);
-	var s4 = new Strut([0, 3]);
-	var s5 = new Strut([3, 2]);
-	struts.push(s1);
-	struts.push(s2);
-	struts.push(s3);
-	struts.push(s4);
-	struts.push(s5);
-
-	var face1 = new Face([s1, s2, s3], [Math.PI/4, Math.PI/2, Math.PI/4], [0, 1, 2]);
-	face1.vertices = [0, 1, 2];
-	face1.pType = 1;
-	var face2 = new Face([s3, s4, s5], [Math.PI/4, Math.PI/4, Math.PI/2], [0, 2, 3]);
-	face2.vertices = [0, 2, 3];
-	face2.pType = 1;
-	faces.push(face1);
-	faces.push(face2);
-	var t1 = new Torsion(0, 2, 1, 3, (Math.PI/4));
-	torsions.push(t1);
-	cube.geometry.faces.push( new THREE.Face3( 0, 1, 2) );
-	cube.geometry.faces.push( new THREE.Face3( 0, 2, 3) );
-*/
-
-
-//edge edge test
-	/*
-	var p0 = $V([-20, 5, 0]);
-	var p1 = $V([20, 8, 3]);
-	cube2.geometry.vertices.push(new THREE.Vector3(-20, 5, 0));
-	cube2.geometry.vertices.push(new THREE.Vector3(20, 8, 3));
-
-	var p2 = $V([0, 2, -20]);
-	var p3 = $V([-3, 2, 20]);
+	myBody = new RigidBody([vertices[8], vertices[9], vertices[10], vertices[11], vertices[12], vertices[13], vertices[14], vertices[15]], []);
 
 
 
 
-	cube3.geometry.vertices.push(new THREE.Vector3(0, 2, -20));
-	cube3.geometry.vertices.push(new THREE.Vector3(-3, 2, 20));
-	vertices.push(new Vertice(p0, 0, cube2.geometry.vertices[0]));
-	vertices.push(new Vertice(p1, 0, cube2.geometry.vertices[1]));
-	vertices.push(new Vertice(p2, 1, cube3.geometry.vertices[0]));
-	vertices.push(new Vertice(p3, 1, cube3.geometry.vertices[1]));
-
-	edges.push(new Edge(0, 1));
-	edges.push(new Edge(2, 3));
-*/
-
-
-//isolated spring
-/*
-
-	var p0 = $V([-20, 5, 0]);
-	var p1 = $V([20, 8, 3]);
-	cube2.geometry.vertices.push(new THREE.Vector3(-20, 5, 0));
-	cube2.geometry.vertices.push(new THREE.Vector3(20, 8, 3));
-
-	vertices.push(new Vertice(p0, 1, cube2.geometry.vertices[0]));
-	vertices.push(new Vertice(p1, 1, cube2.geometry.vertices[1]));
-	struts.push(new Strut([0, 1]));*/
-	//setup the vertices of a cube at 0 0 0 that has points on the lines of 50
-	
-	/*for(var i = 0; i  < 8; i++){
-		var x = 50;
-		if(i >= 4){
-			x = -50;
-		}
-		var y = 50;
-		if(i == 2 || i == 3 || i == 6 || i == 7){
-			y = -50;
-		}
-		var z = 50;
-		if(i == 1 || i == 3 || i == 4 || i == 6){
-			z = -50;
-		}
-		var nv = new Vertice($V([x, y, z]), $V([0, 0, 0]), 1, cube.geometry.vertices[i], 0);
-		vertices.push(nv);
-	}
-	edges.push(new Edge(7, 2));
-	edges.push(new Edge(7, 0));
-	edges.push(new Edge(7, 6));
-	edges.push(new Edge(7, 5));
-	edges.push(new Edge(6, 3));
-	edges.push(new Edge(6, 4));
-	edges.push(new Edge(6, 2));
-	edges.push(new Edge(6, 5));
-	edges.push(new Edge(3, 2));
-	edges.push(new Edge(3, 1));
-	edges.push(new Edge(3, 4));
-	edges.push(new Edge(2, 0));
-	edges.push(new Edge(2, 1));
-	edges.push(new Edge(5, 4));
-	edges.push(new Edge(5, 1));
-	edges.push(new Edge(5, 0));
-	edges.push(new Edge(4, 1));
-	edges.push(new Edge(1, 0));*/
-/*
-	var p1 = $V([-100, -100, 100])
-	vertices.push(new Vertice(p1, $V([0, 0, 0]), 1, plane.geometry.vertices[0], 1));
-	var p2 = $V([100, -100, 100])
-	var p3 = $V([-100, -100, -100])
-	var p4 = $V([ 100, -100, -100])
-	vertices.push(new Vertice(p2, $V([0, 0, 0]), 1, plane.geometry.vertices[1], 2));
-vertices.push(new Vertice(p3, $V([0, 0, 0]), 1, plane.geometry.vertices[2], 2));
-	vertices.push(new Vertice(p4, $V([0, 0, 0]), 1, plane.geometry.vertices[3], 2));
-	faces.push(new Face([], [], [8, 9, 11, 10]));*/
 
 
 
-/*
-	faces.push(new Face([], [], [5, 7, 2, 0]));
-	faces.push(new Face([], [], [0, 2, 3, 1]));
-	faces.push(new Face([], [], [1, 3, 6, 4]));
-	faces.push(new Face([], [], [4, 6, 7, 5]));
-	faces.push(new Face([], [], [4, 5, 0, 1]));
-	faces.push(new Face([], [], [7, 6, 3, 2]));*/
-
-	//static cube 2
-	/*
-	for(var i = 0; i  < 8; i++){
-		var x = 50;
-		if(i >= 4){
-			x = -50;
-		}
-		var y = -150;
-		if(i == 2 || i == 3 || i == 6 || i == 7){
-			y = -250;
-		}
-		var z = 50;
-		if(i == 1 || i == 3 || i == 4 || i == 6){
-			z = -50;
-		}
-		var p = $V([x, y, z]);
-		var m = $M([[.7071, -.7071, 0],[.7071, .7071, 0],[0, 0, 1]]);
-		p = m.multiply(p);
-		p.elements[0] = p.elements[0] -225;
-				p.elements[1] = p.elements[1] -10;
-				p.elements[2] = p.elements[2] + 50;
-		var nv = new Vertice(p, $V([0, 0, 0]), 1, cube2.geometry.vertices[i], 1);
-		vertices.push(nv);
-	}
-	var indexForCube2 = 8;
-	edges.push(new Edge(7+indexForCube2, 2+indexForCube2));
-	edges.push(new Edge(7+indexForCube2, 0+indexForCube2));
-	edges.push(new Edge(7+indexForCube2, 6+indexForCube2));
-	edges.push(new Edge(7+indexForCube2, 5+indexForCube2));
-	edges.push(new Edge(6+indexForCube2, 3+indexForCube2));
-	edges.push(new Edge(6+indexForCube2, 4+indexForCube2));
-	edges.push(new Edge(6+indexForCube2, 2+indexForCube2));
-	edges.push(new Edge(6+indexForCube2, 5+indexForCube2));
-	edges.push(new Edge(3+indexForCube2, 2+indexForCube2));
-	edges.push(new Edge(3+indexForCube2, 1+indexForCube2));
-	edges.push(new Edge(3+indexForCube2, 4+indexForCube2));
-	edges.push(new Edge(2+indexForCube2, 0+indexForCube2));
-	edges.push(new Edge(2+indexForCube2, 1+indexForCube2));
-	edges.push(new Edge(5+indexForCube2, 4+indexForCube2));
-	edges.push(new Edge(5+indexForCube2, 1+indexForCube2));
-	edges.push(new Edge(5+indexForCube2, 0+indexForCube2));
-	edges.push(new Edge(4+indexForCube2, 1+indexForCube2));
-	edges.push(new Edge(1+indexForCube2, 0+indexForCube2));
-
-	faces.push(new Face([], [], [5+indexForCube2, 7+indexForCube2, 2+indexForCube2, 0+indexForCube2]));
-	faces.push(new Face([], [], [0+indexForCube2, 2+indexForCube2, 3+indexForCube2, 1+indexForCube2]));
-	faces.push(new Face([], [], [1+indexForCube2, 3+indexForCube2, 6+indexForCube2, 4+indexForCube2]));
-	faces.push(new Face([], [], [4+indexForCube2, 6+indexForCube2, 7+indexForCube2, 5+indexForCube2]));
-	faces.push(new Face([], [], [4+indexForCube2, 5+indexForCube2, 0+indexForCube2, 1+indexForCube2]));
-	faces.push(new Face([], [], [7+indexForCube2, 6+indexForCube2, 3+indexForCube2, 2+indexForCube2]));*/
 	edgeColMatrix = [];
 	for(var i = 0; i < edges.length; i++){
 		var c = [];
@@ -609,15 +393,42 @@ var radded = false;
 
 
 
+function RigidBody(vertices, edges){
+	this.bodyType = 'cube'
+	this.vertices = vertices;
+	this.edges = edges;
+	this.mass = 1;
+}
+
+RigidBody.prototype.centerOfMass = function(){
+	//since it's a cube I cheat because I'm a fucking cheater and that's all I'll ever be you dumb piece of human garbage
+	var cross1 = this.vertices[0].p.subtract(this.vertices[7].p).multiply(1/2);
+	var center = this.vertices[7].p.add(cross1);
+	return center;
+
+
+
+}
+
+RigidBody.prototype.momentOfInertia = function(){
+	var constantForCubes = (this.mass/12)*(400)
+	var I = $M([
+		[constantForCubes, 0, 0],
+		[0, constantForCubes, 0],
+		[0, 0, constantForCubes]
+
+		]);
+	return I;
+}
 function mainLoop(){
 	makeScene();
 	var clock = new THREE.Clock;
 	var d = new Date();
 
 	var preFrameTime = d.getTime();
-	console.log(preFrameTime);
 	var fragmentsOfTime = 0;
-
+	canonicalArray = new RigidArray();
+	canonicalArray.init();
 	
     timeStep = 50;
 	renderer.render(scene, camera);
@@ -640,48 +451,43 @@ function mainLoop(){
 		    //simulate timesteps
 		    for (var i = 0; i < stepsGoneThrough; i ++){
 
-		    	//dump all objects into stateArray
-		    	for (var j = 0; j < vertices.length; j++){
-		    		vertices[j].toArray(stateArray, (j*PROPERTIES_PER_AGENT));
-		    	}
-		    	var sdot = calculateStateDynamics(stateArray, stateTime);
+				var svForced = calculateStateDynamics(canonicalArray, stateTime);
 		    	var newStateArray;
-		    		newStateArray = rungeKutta(stateArray, sdot, (timeStep/1000), stateTime, calculateStateDynamics);
-		    	
-
-
-		    	/*calculateStateDynamics(stateTime);
-
-		    	//like, other stuff here
-
-		    	var newStateArray = numericallyIntegrate(timeStep);
-
-		    	//collision detect here
-	-*/
-		    	stateArray = newStateArray; 
-
-		    	//dump all objects into stateArray
-		    	for(var j =0; j < vertices.length; j++){
-		    		vertices[j].fromArray(stateArray, (j*PROPERTIES_PER_AGENT));
-
-		    	}
-
+		    	newStateArray = rungeKutta(canonicalArray, svForced, (timeStep/1000), stateTime, calculateStateDynamics);
+		    	canonicalArray = newStateArray;
 		    	nyeah = nyeah + 1;
 		    	stateTime = (timeStep/1000)*nyeah; 
 			
 
 		    }
-		    //update vertices IRL
-		    for (var i = 0; i < vertices.length; i++){
-		    	vertices[i].rendering.x = vertices[i].p.e(1)
-		    	vertices[i].rendering.y = vertices[i].p.e(2);
-		    	vertices[i].rendering.z = vertices[i].p.e(3);
+		    /*//update vertices IRL
+		    for (var i = 0; i < myBody.vertices.length; i++){
+		    	var vert = myBody.vertices[i];
+		    	var vertVec = new THREE.Vector3(vert.p.e(1), vert.p.e(2), vert.p.e(3));
+		    	vertVec.applyQuaternion(canonicalArray.orientation);
+		    	vertVec.x = vertVec.x + canonicalArray.p.e(1);
+		    	vertVec.y = vertVec.y + canonicalArray.p.e(2);
+		    	vertVec.z = vertVec.z + canonicalArray.p.e(3);
+
+		    	vert.rendering.x = vertVec.x; 
+		    	vert.rendering.y = vertVec.y;
+		    	vert.rendering.z = vertVec.z; 
+
+		    }*/
+		    cube2.position.x = canonicalArray.p.e(1);
+		    cube2.position.y = canonicalArray.p.e(2);
+		    cube2.position.z = canonicalArray.p.e(3);
+
+		    var rotationM = new THREE.Matrix4()
+		    
+		    rotationM.makeRotationFromQuaternion(canonicalArray.orientation);
+
+		    cube2.quaternion.setFromRotationMatrix(rotationM);
 		    	cube.geometry.verticesNeedUpdate = true;
 		    	cube2.geometry.verticesNeedUpdate = true;
 		    	cube3.geometry.verticesNeedUpdate = true;
 		    	tface.geometry.verticesNeedUpdate = true;
 
-		    }
 	    }else{
 	    	preFrameTime = n.getTime();
 	    }
