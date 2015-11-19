@@ -32,7 +32,7 @@ function RigidArray(p, m, r, a){
 }
 
 RigidArray.prototype.init = function(){
-	this.p = $V([0,0,0])
+	this.p = $V([5,0,0])
 	this.momentum = $V([0,0,0]);
 	this.orientation = new THREE.Quaternion();
 	this.orientation.setFromAxisAngle (new THREE.Vector3(0, 1,0), 0);
@@ -134,7 +134,7 @@ function mFromQuat(q){
 //Linear force gravity
 //Ang force: noooone
 var oneAnd = 0;
-function calculateStateDynamics(a, t){
+function calculateStateDynamics(a, t, collisions){
 	var d = new RigidDynamics();
 	d.v = a.momentum.multiply((1/myBody.mass));
 	var m4 = new THREE.Matrix4();
@@ -153,6 +153,7 @@ function calculateStateDynamics(a, t){
 	var omegaQ = new THREE.Quaternion();
 	omegaQ.setFromAxisAngle (new THREE.Vector3(omegaga.e(1), omegaga.e(2), omegaga.e(3)), magnitude(omegaga));
 	omegaQ.multiply(a.orientation);
+	d.lf = $V([0, -9.8, 0]);
 
 	var scalar = (1.0/2.0);
 	omegaQ.x = omegaQ.x * scalar;
@@ -161,16 +162,19 @@ function calculateStateDynamics(a, t){
 	omegaQ.w = omegaQ.w * scalar;
 	d.omegaR = omegaQ;
 	d.af = $V([0, 0, 0]); 
-	if(t > 2 && t < 3 && (oneAnd == 0)){
-		//var impactPoint = $V([-10, -10, -10]);
-		var impulse = $V([10, 0, 0]);
-		//var r = impactPoint.subtract(a.p);
-		//d.af = d.af.add(r.cross(impulse));
-		d.af = d.af.add(impulse);
-		oneAnd++;
+	
+	if(collisions){
+		//ignore all but one I'm lazy
+		var c = collisions[0];
+		var f = bounceAway(a.momentum, c.normal);
+		d.lf = d.lf.add(f);
+		var r = c.p1.subtract(a.p);
+		d.af = d.af.add(r.cross(f));
+
+
+
 	}
 
-	d.lf = $V([0, -9.8, 0]);
 
 	return d;
 }
@@ -206,7 +210,7 @@ function verticeFaceBasicDetect(pos1, pos2, face){
 	else{
 		var fract = dist1 / (dist1 - dist2);
 
-		return {time: fract, normal: normal, face: face}
+		return {time: fract, normal: normal, face: face, p1: pos1}
 	}
 
 }
@@ -338,7 +342,7 @@ function sanityChecks(p1, p2, q1, q2){
 	}
 	return true;
 }
-
+/*
 function bestGuessXHit(s, snew, plane, h, t){
 	for(var i = 2; i < 5; i++){
 		var tslice = h/i;
@@ -346,14 +350,14 @@ function bestGuessXHit(s, snew, plane, h, t){
 		var firstHalfState = rungeKutta(s, firstDynamics, (1000*tslice), t, calculateStateDynamics);
 		var secondDynamics = calculateStateDynamics(s, (t+tslice));
 		var secondHalfState = rungeKutta(firstHalfState, secondDynamics, (1000*tslice), (t+tslice), calculateStateDynamics);
-		var firstCol = detectCollisions(s, firstHalfState, (tslice*1000), t);
-		var secondCol = detectCollisions(firstHalfState, secondHalfState, (tslice*1000), (t+tslice));
+		var firstCol = detectCollisions(s, firstHalfState, (tslice*1000), t, true);
+		var secondCol = detectCollisions(firstHalfState, secondHalfState, (tslice*1000), (t+tslice), true);
 		console.log(firstCol.length);
 		console.log(secondCol.length);
 
 	}
-}
-function detectCollisions(s, snew, h, t){
+}*/
+function detectCollisions(s, snew, h, t, notrecursive){
 	//for all vertices try each face
 	var collisions = [];
 
@@ -387,19 +391,7 @@ function detectCollisions(s, snew, h, t){
 				var xHit = priorV.multiply(basicDetails.time*(h)).add(p);*/
 				console.log('partial');
 				if(verticeFaceFullDetect(p, basicDetails.face)){
-				//	var collisionVelocity = bounceAway(priorV, basicDetails.normal);
-				//	var velFract = collisionVelocity.multiply((1-(ts/h))).multiply(h/2);
-					//var velFract = collisionVelocity.multiply(1).multiply(h/2);
-				//	var newPos = xHit.add(velFract)
-				bestGuessXHit(s, snew, null, h, t);
-				/*	console.log('log here');
-					
-					snew[arrayIndex] = newPos.e(1);
-					snew[arrayIndex+1] = newPos.e(2);
-					snew[arrayIndex+2] = newPos.e(3);
-					snew[arrayIndex+3] = collisionVelocity.e(1);
-					snew[arrayIndex+4] = collisionVelocity.e(2);
-					snew[arrayIndex+5] = collisionVelocity.e(3);*/
+			
 					collisions.push(basicDetails);
 				}
 			}
@@ -518,6 +510,23 @@ function detectCollisions(s, snew, h, t){
 	//for each edge try each edge 
 }
 
+function impulse(s, collisions){
+	var f;
+	for(var i = 0; i < collisions.length; i++){
+		var c = collisions[i];
+		if(i == 0){
+			f = bounceAway(s.momentum, c.normal).multiply(100/1000);
+		}else{
+			var f1 = bounceAway(s.momentum, c.normal).multiply(100/1000);
+			f = f1.cross(f);
+		}
+
+	}
+	s.p = s.p.add(f);
+	//s.p = s.p.add(s.momentum.multiply(-50/1000));
+
+
+}
 function rungeKutta(stateVector, stateVectorForced, timestep, t, forceFunction){
 
 
@@ -534,45 +543,63 @@ function rungeKutta(stateVector, stateVectorForced, timestep, t, forceFunction){
 
 	//collision detect with prek2
 	var collisions = detectCollisions(stateVector, prek2, timestep, t);
-	if(collisions.length > 1 ){
+	if(collisions.length >= 1 ){
 		console.log('fucking wrecked mate');
+		var forcedCol = forceFunction(stateVector, t, collisions)
+		impulse(stateVector, collisions);
+		prek2 = dynamicsMultScalar(forcedCol, (timestep/2.0));
+		prek2 = stateAddDynamics(stateVector, prek2);
+		return prek2;
+
 	}
 	//if(collisions.length < 1 && runge){
 
-		var k2 = forceFunction(prek2, (t+(timestep/2.0)));
+	var k2 = forceFunction(prek2, (t+(timestep/2.0)));
 
-		var prek3 = dynamicsMultScalar(k2, (timestep/2.0));
-		prek3 = stateAddDynamics(stateVector, prek3);
-		var k3 = forceFunction(prek3, (t+(timestep/2.0)));
+	var prek3 = dynamicsMultScalar(k2, (timestep/2.0));
+	prek3 = stateAddDynamics(stateVector, prek3);
+	var k3 = forceFunction(prek3, (t+(timestep/2.0)));
 
-		var prek4 = dynamicsMultScalar(k3, timestep);
-		prek4 = stateAddDynamics(stateVector, prek4);
-		var k4 = forceFunction(prek4, (t+timestep));
+	var prek4 = dynamicsMultScalar(k3, timestep);
+	prek4 = stateAddDynamics(stateVector, prek4);
+	var k4 = forceFunction(prek4, (t+timestep));
 
-		var k22 = dynamicsMultScalar(k2, 2);
-		var k32 = dynamicsMultScalar(k3, 2);
-		var kadds = dynamicsAddDynamics(k1, k22);
-		kadds = dynamicsAddDynamics(kadds, k32);
-		kadds = dynamicsAddDynamics(kadds, k4);
-		kadds = dynamicsMultScalar(kadds, (timestep/6.0));
+	var k22 = dynamicsMultScalar(k2, 2);
+	var k32 = dynamicsMultScalar(k3, 2);
+	var kadds = dynamicsAddDynamics(k1, k22);
+	kadds = dynamicsAddDynamics(kadds, k32);
+	kadds = dynamicsAddDynamics(kadds, k4);
+	kadds = dynamicsMultScalar(kadds, (timestep/6.0));
 
 
-		var sNew = stateAddDynamics(stateVector, kadds);
-		/*collisions = detectCollisions(stateVector, sNew, timestep); 
-		if(collisions.length > 0){
-			return sNew;*/
-		/*}else{
-			for(var j =0; j < vertices.length; j++){
-		    	vertices[j].fromArray(prek2, (j*PROPERTIES_PER_AGENT));
-		 	}
-		}*/
+	var sNew = stateAddDynamics(stateVector, kadds);
 
-		//collision detect with prek2
-		//var collisions = detectCollisions(stateVector, sNew, timestep), t;
 
-		sNew.orientation.normalize();
+	collisions = detectCollisions(stateVector, sNew, timestep, t);
+	if(collisions.length >= 1 ){
+		console.log('fucking wrecked mate');
+		var forcedCol = forceFunction(stateVector, t, collisions)
+		impulse(stateVector, collisions);
+		prek2 = dynamicsMultScalar(forcedCol, (timestep/2.0));
+		prek2 = stateAddDynamics(stateVector, prek2);
+		return prek2;
 
-		return sNew;
+	}
+	/*collisions = detectCollisions(stateVector, sNew, timestep); 
+	if(collisions.length > 0){
+		return sNew;*/
+	/*}else{
+		for(var j =0; j < vertices.length; j++){
+	    	vertices[j].fromArray(prek2, (j*PROPERTIES_PER_AGENT));
+	 	}
+	}*/
+
+	//collision detect with prek2
+	//var collisions = detectCollisions(stateVector, sNew, timestep), t;
+
+	sNew.orientation.normalize();
+
+	return sNew;
 
 /*	}else{
 		return prek2;
