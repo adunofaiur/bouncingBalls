@@ -2,7 +2,7 @@ var renderer, cube, sphere, scene, camere, points, colors = [], pMaterial, pGeo;
 
 var timeStep = 100;
 var isplaying =  false;
-var FRICTION_COEFFICIENT = .5;
+var FRICTION_COEFFICIENT = .1;
 var AIR_RESISTANCE = .1;
 var pSize = [];
 var pOpacity = [];
@@ -285,6 +285,7 @@ function setupData(properties){
 	faces.push(new Face([6, 4, 5, 7]));
 	faces.push(new Face([3, 2, 7, 5]));
 	faces.push(new Face([1, 0, 4, 6]));
+	faces.push(new Face([1, 2, 3, 0]));
 
 
 
@@ -487,6 +488,13 @@ function mainLoop(){
 		    	cube2.geometry.verticesNeedUpdate = true;
 		    	cube3.geometry.verticesNeedUpdate = true;
 		    	tface.geometry.verticesNeedUpdate = true;
+
+		    //checkrest
+		    if( (Math.abs(canonicalArray.momentum.e(1)) + Math.abs(canonicalArray.momentum.e(3))) < 2.5 ){
+		    	if(canonicalArray.p.e(2) < -135){
+		    		isplaying = false;
+		    	}
+		    }
 
 	    }else{
 	    	preFrameTime = n.getTime();
