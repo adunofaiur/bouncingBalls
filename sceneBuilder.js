@@ -2,7 +2,7 @@ var renderer, cube, sphere, scene, camere, points, colors = [], pMaterial, pGeo;
 
 var timeStep = 100;
 var isplaying =  false;
-var FRICTION_COEFFICIENT = .000001;
+var FRICTION_COEFFICIENT = .5;
 var AIR_RESISTANCE = .1;
 var pSize = [];
 var pOpacity = [];

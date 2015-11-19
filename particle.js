@@ -16,7 +16,7 @@ function magnitude(sylvVect){
 }
 
 function sameSign(a, b){
-	if(a*b >= 0){
+	if(!(a >=0 && b <= 0)){
 		return true;
 	}
 	else{
@@ -33,10 +33,10 @@ function RigidArray(p, m, r, a){
 
 RigidArray.prototype.init = function(){
 	this.p = $V([5,0,0])
-	this.momentum = $V([0,0,0]);
+	this.momentum = $V([100,100,10]);
 	this.orientation = new THREE.Quaternion();
 	this.orientation.setFromAxisAngle (new THREE.Vector3(0, 1,0), 0);
-	this.angularMomentum = $V([0, .1, .1]);
+	this.angularMomentum = $V([.1, 0, 0]);
 
 }
 
@@ -85,10 +85,10 @@ function stateAddDynamics(a, d){
 	//qaut stuff here
 	s.orientation = a.orientation.clone();
 	//s.orientation.multiply(d.omegaR);
-	s.orientation.x = d.omegaR.x + s.orientation.x; 
-		s.orientation.y = d.omegaR.y + s.orientation.y; 
-	s.orientation.z = d.omegaR.z + s.orientation.z; 
-	s.orientation.w = d.omegaR.w + s.orientation.w; 
+	s.orientation.x = (d.omegaR.x  * 1/myBody.mass)+ s.orientation.x; 
+	s.orientation.y = (d.omegaR.y  * 1/myBody.mass) + s.orientation.y; 
+	s.orientation.z = (d.omegaR.z  * 1/myBody.mass) + s.orientation.z; 
+	s.orientation.w = (d.omegaR.w  * 1/myBody.mass)+ s.orientation.w; 
 	s.orientation.normalize();
 	return s;
 }
@@ -165,16 +165,23 @@ function calculateStateDynamics(a, t, collisions){
 	
 	if(collisions){
 		//ignore all but one I'm lazy
-		var c = collisions[0];
-		var f = bounceAway(a.momentum, c.normal);
-		d.lf = d.lf.add(f);
+		var f;
+		for(var i = 0; i < collisions.length; i++){
+			var c = collisions[i];
+				if(i == 0){
+					f = bounceAway(c.vv, c.normal).multiply(1);
+				}else{
+					var f1 = bounceAway(c.vv, c.normal).multiply(1);
+					f = f.cross(f1);
+				}
+
+		}
+		
+		//d.lf = d.lf.add(f);
 		var r = c.p1.subtract(a.p);
-		d.af = d.af.add(r.cross(f));
-
-
+		d.af = (d.af.add(r.cross(f)));
 
 	}
-
 
 	return d;
 }
@@ -298,10 +305,10 @@ function verticeFaceFullDetect(xHit, face){
 }
 
 function bounceAway(v, planeNormal, t){
-		var ELASTIC_COEFFICIENT = .8;
+		var ELASTIC_COEFFICIENT = .5;
 
 	if(t){
-	var ELASTIC_COEFFICIENT = 1;
+	var ELASTIC_COEFFICIENT = .5;
 
 	}
 
@@ -391,7 +398,7 @@ function detectCollisions(s, snew, h, t, notrecursive){
 				var xHit = priorV.multiply(basicDetails.time*(h)).add(p);*/
 				console.log('partial');
 				if(verticeFaceFullDetect(p, basicDetails.face)){
-			
+					basicDetails.vv = pnew.subtract(p).multiply(1/h);
 					collisions.push(basicDetails);
 				}
 			}
@@ -511,18 +518,24 @@ function detectCollisions(s, snew, h, t, notrecursive){
 }
 
 function impulse(s, collisions){
+	
 	var f;
+	if(collisions.length > 1){
+		console.log('omg kevin')
+	}
 	for(var i = 0; i < collisions.length; i++){
 		var c = collisions[i];
-		if(i == 0){
-			f = bounceAway(s.momentum, c.normal).multiply(100/1000);
-		}else{
-			var f1 = bounceAway(s.momentum, c.normal).multiply(100/1000);
+		//if(i == 0){
+			f = bounceAway(c.vv, c.normal);
+			s.p = s.p.add(f.multiply(50/1000));
+			s.momentum = f;
+
+		/*}else{
+			var f1 = bounceAway(c.vv, c.normal);
 			f = f1.cross(f);
-		}
+		}*/
 
 	}
-	s.p = s.p.add(f);
 	//s.p = s.p.add(s.momentum.multiply(-50/1000));
 
 
