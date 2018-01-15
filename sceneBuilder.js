@@ -299,7 +299,6 @@ function mainLoop(){
 		d = new Date();
 		$(playButton).addClass('grayed');
 		$(pauseButton).removeClass('grayed');
-		$(resetButton).removeClass('grayed');
 
 		preFrameTime = d.getTime();
 		render();
@@ -313,18 +312,6 @@ function mainLoop(){
 				$(playButton).removeClass('grayed');
 
 		isplaying = false;
-	})
-	var resetButton = $('#resetbutton')[0];
-	resetButton.addEventListener('click', function(event){
-		if($(resetButton).hasClass('grayed')){
-			return;
-		}
-		simState = resetSim(simState);
-				d = new Date();
-
-		preFrameTime = d.getTime();
-		render();
-
 	})
 
 }
